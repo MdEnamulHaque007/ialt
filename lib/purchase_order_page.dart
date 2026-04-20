@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import '../models/purchase_order.dart';
+import '../services/purchase_order_service.dart';
 
 class PurchaseOrderPage extends StatefulWidget {
   const PurchaseOrderPage({super.key});
@@ -32,6 +34,8 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage>
   // Stats
   double _totalPoValue = 0;
   int _totalPoCount = 0;
+
+  final PurchaseOrderService _service = PurchaseOrderService();
 
   @override
   void initState() {
@@ -163,7 +167,7 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage>
 
   Future<void> _deletePO(String id) async {
     try {
-      await _firestore.collection('purchase_order').doc(id).delete();
+      await _service.delete(id);
       _showSnackBar('PO deleted successfully');
       await _loadPOs();
       if (_selectedPO?.containsKey('id') == true && _selectedPO!['id'] == id) {
@@ -726,23 +730,44 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage>
                                       (sum, l) => sum + (l['totalValue'] ?? 0),
                                     );
 
-                                    await _firestore
-                                        .collection('purchase_order')
-                                        .add({
-                                          'poDate': controllers['poDate']!.text,
-                                          'poNo': controllers['poNo']!.text,
-                                          'orderBy':
-                                              controllers['orderBy']!.text,
-                                          'brand': controllers['brand']!.text,
-                                          'project':
-                                              controllers['project']!.text,
-                                          'tag': controllers['tag']!.text,
-                                          'lines': tempLines,
-                                          'totalQuantity': totalQuantity,
-                                          'totalValue': totalValue,
-                                          'createdAt':
-                                              FieldValue.serverTimestamp(),
-                                        });
+                                    final po = PurchaseOrder(
+                                      id: '',
+                                      poNo: controllers['poNo']!.text.trim(),
+                                      poDate: controllers['poDate']!.text
+                                          .trim(),
+                                      orderBy: controllers['orderBy']!.text
+                                          .trim(),
+                                      brand: controllers['brand']!.text.trim(),
+                                      project: controllers['project']!.text
+                                          .trim(),
+                                      tag: controllers['tag']!.text.trim(),
+                                      totalQuantity: totalQuantity.toInt(),
+                                      totalValue: totalValue,
+                                      lines: tempLines
+                                          .map(
+                                            (l) => PurchaseOrderLine(
+                                              article:
+                                                  l['article']?.toString() ??
+                                                  '',
+                                              color:
+                                                  l['color']?.toString() ?? '',
+                                              qty:
+                                                  (l['qty'] as num?)?.toInt() ??
+                                                  0,
+                                              unitPrice:
+                                                  (l['unitPrice'] as num?)
+                                                      ?.toDouble() ??
+                                                  0.0,
+                                              totalValue:
+                                                  (l['totalValue'] as num?)
+                                                      ?.toDouble() ??
+                                                  0.0,
+                                            ),
+                                          )
+                                          .toList(),
+                                      createdAt: DateTime.now(),
+                                    );
+                                    await _service.add(po);
 
                                     if (!ctx.mounted) return;
                                     Navigator.pop(ctx);
@@ -1366,29 +1391,49 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage>
                                       (sum, l) => sum + (l['totalValue'] ?? 0),
                                     );
 
-                                    await _firestore
-                                        .collection('purchase_order')
-                                        .doc(po['id'])
-                                        .update({
-                                          'poDate':
-                                              headerControllers['poDate']!.text,
-                                          'poNo':
-                                              headerControllers['poNo']!.text,
-                                          'orderBy':
-                                              headerControllers['orderBy']!
-                                                  .text,
-                                          'brand':
-                                              headerControllers['brand']!.text,
-                                          'project':
-                                              headerControllers['project']!
-                                                  .text,
-                                          'tag': headerControllers['tag']!.text,
-                                          'lines': tempLines,
-                                          'totalQuantity': totalQuantity,
-                                          'totalValue': totalValue,
-                                          'updatedAt':
-                                              FieldValue.serverTimestamp(),
-                                        });
+                                    final po2 = PurchaseOrder(
+                                      id: po['id'],
+                                      poNo: headerControllers['poNo']!.text
+                                          .trim(),
+                                      poDate: headerControllers['poDate']!.text
+                                          .trim(),
+                                      orderBy: headerControllers['orderBy']!
+                                          .text
+                                          .trim(),
+                                      brand: headerControllers['brand']!.text
+                                          .trim(),
+                                      project: headerControllers['project']!
+                                          .text
+                                          .trim(),
+                                      tag: headerControllers['tag']!.text
+                                          .trim(),
+                                      totalQuantity: totalQuantity.toInt(),
+                                      totalValue: totalValue,
+                                      lines: tempLines
+                                          .map(
+                                            (l) => PurchaseOrderLine(
+                                              article:
+                                                  l['article']?.toString() ??
+                                                  '',
+                                              color:
+                                                  l['color']?.toString() ?? '',
+                                              qty:
+                                                  (l['qty'] as num?)?.toInt() ??
+                                                  0,
+                                              unitPrice:
+                                                  (l['unitPrice'] as num?)
+                                                      ?.toDouble() ??
+                                                  0.0,
+                                              totalValue:
+                                                  (l['totalValue'] as num?)
+                                                      ?.toDouble() ??
+                                                  0.0,
+                                            ),
+                                          )
+                                          .toList(),
+                                      updatedAt: DateTime.now(),
+                                    );
+                                    await _service.update(po2);
 
                                     if (!ctx.mounted) return;
                                     Navigator.pop(ctx);
