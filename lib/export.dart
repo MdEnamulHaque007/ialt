@@ -128,13 +128,15 @@ class _ExportPageState extends State<ExportPage>
 
       // Delivery criteria filter
       if (_filterDeliveryCriteria != 'All' &&
-          exp['deliveryCriteria'] != _filterDeliveryCriteria)
+          exp['deliveryCriteria'] != _filterDeliveryCriteria) {
         return false;
+      }
 
       // Selling criteria filter
       if (_filterSellingCriteria != 'All' &&
-          exp['sellingCriteria'] != _filterSellingCriteria)
+          exp['sellingCriteria'] != _filterSellingCriteria) {
         return false;
+      }
 
       return true;
     }).toList();
@@ -493,7 +495,7 @@ class _ExportPageState extends State<ExportPage>
                             labelText: 'PO Number *',
                             border: OutlineInputBorder(),
                           ),
-                          value: _selectedPoNo,
+                          initialValue: _selectedPoNo,
                           items: [
                             const DropdownMenuItem(
                               value: null,
@@ -520,7 +522,7 @@ class _ExportPageState extends State<ExportPage>
                             labelText: 'Article Number *',
                             border: OutlineInputBorder(),
                           ),
-                          value: _selectedArticle,
+                          initialValue: _selectedArticle,
                           items: [
                             const DropdownMenuItem(
                               value: null,
@@ -550,7 +552,7 @@ class _ExportPageState extends State<ExportPage>
                             labelText: 'Color *',
                             border: OutlineInputBorder(),
                           ),
-                          value: _selectedColor,
+                          initialValue: _selectedColor,
                           items: [
                             const DropdownMenuItem(
                               value: null,
@@ -606,7 +608,7 @@ class _ExportPageState extends State<ExportPage>
                             labelText: 'Delivery Criteria *',
                             border: OutlineInputBorder(),
                           ),
-                          value: _selectedDeliveryCriteria,
+                          initialValue: _selectedDeliveryCriteria,
                           items: const [
                             DropdownMenuItem(
                               value: null,
@@ -633,7 +635,7 @@ class _ExportPageState extends State<ExportPage>
                             labelText: 'Selling Criteria *',
                             border: OutlineInputBorder(),
                           ),
-                          value: _selectedSellingCriteria,
+                          initialValue: _selectedSellingCriteria,
                           items: const [
                             DropdownMenuItem(
                               value: null,

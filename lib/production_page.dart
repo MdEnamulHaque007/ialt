@@ -997,7 +997,7 @@ class _ProductionPageState extends State<ProductionPage>
                                   ],
                                 ),
                               );
-                            }).toList(),
+                            }),
                             // Footer Summary
                             Container(
                               color: Colors.indigo.shade50,

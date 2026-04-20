@@ -950,7 +950,7 @@ class _DashboardContentState extends State<_DashboardContent>
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: snapshot.data!.length,
-          separatorBuilder: (_, __) => Divider(height: 32, color: _kBorder),
+          separatorBuilder: (_, _) => Divider(height: 32, color: _kBorder),
           itemBuilder: (context, index) {
             final activity = snapshot.data![index];
             return _ActivityTile(activity: activity);
@@ -1779,8 +1779,9 @@ class _MasterLcContentState extends State<MasterLcContent> {
       onSelected: (selection) => controller.text = selection,
       fieldViewBuilder: (ctx, fieldCtrl, focusNode, onFieldSubmitted) {
         fieldCtrl.addListener(() {
-          if (controller.text != fieldCtrl.text)
+          if (controller.text != fieldCtrl.text) {
             controller.text = fieldCtrl.text;
+          }
         });
         return TextFormField(
           controller: fieldCtrl,

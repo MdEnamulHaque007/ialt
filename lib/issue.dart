@@ -157,8 +157,9 @@ class _IssuePageState extends State<IssuePage>
       }
 
       // Criteria filter
-      if (_filterCriteria != 'All' && issue['criteria'] != _filterCriteria)
+      if (_filterCriteria != 'All' && issue['criteria'] != _filterCriteria) {
         return false;
+      }
 
       // Date range filter
       if (_dateRange != null) {
