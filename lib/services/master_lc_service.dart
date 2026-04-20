@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/master_lc.dart';
+import 'activity_log_service.dart';
 
 class MasterLCService {
+  final ActivityLogService _logger = ActivityLogService();
   final CollectionReference _col = FirebaseFirestore.instance.collection(
     'master_lc',
   );
@@ -37,6 +39,10 @@ class MasterLCService {
   Future<void> add(MasterLC lc) async {
     try {
       await _col.add(lc.toFirestore());
+      await _logger.logCreate(
+        module: 'MasterLC',
+        details: 'Added Tag: ${lc.tagNo}, Project: ${lc.project}',
+      );
     } catch (e) {
       throw Exception('MasterLC add failed: $e');
     }
@@ -46,6 +52,10 @@ class MasterLCService {
   Future<void> update(MasterLC lc) async {
     try {
       await _col.doc(lc.id).update(lc.toFirestore());
+      await _logger.logUpdate(
+        module: 'MasterLC',
+        details: 'Updated Tag: ${lc.tagNo}, Project: ${lc.project}',
+      );
     } catch (e) {
       throw Exception('MasterLC update failed: $e');
     }
@@ -55,6 +65,7 @@ class MasterLCService {
   Future<void> delete(String id) async {
     try {
       await _col.doc(id).delete();
+      await _logger.logDelete(module: 'MasterLC', details: 'Deleted ID: $id');
     } catch (e) {
       throw Exception('MasterLC delete failed: $e');
     }

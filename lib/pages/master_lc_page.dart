@@ -1406,7 +1406,11 @@ class _MasterLcContentState extends State<MasterLcContent> {
     _ttCtrl.text = data['tt_no'] ?? '';
     _valueCtrl.text = (data['master_lc_value'] ?? 0).toString();
     _qtyCtrl.text = (data['master_lc_qty'] ?? 0).toString();
-    _selectedDate = (data['master_lc_date'] as Timestamp?)?.toDate();
+    _selectedDate = data['master_lc_date'] is Timestamp
+        ? (data['master_lc_date'] as Timestamp?)?.toDate()
+        : data['master_lc_date'] is String
+        ? DateTime.parse(data['master_lc_date'])
+        : null;
   }
 
   void _showFormDialog({String? docId, Map<String, dynamic>? data}) {

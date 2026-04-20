@@ -32,7 +32,6 @@ class _AdminPanelState extends State<AdminPanel>
   late TabController _tabController;
   int _selectedIndex = 0;
 
-  // Dashboard Stats
   int poCount = 0;
   double poValue = 0;
   int productionCount = 0;
@@ -58,7 +57,6 @@ class _AdminPanelState extends State<AdminPanel>
 
   Future<void> _loadDashboardStats() async {
     try {
-      // Purchase Orders
       final poSnapshot = await FirebaseFirestore.instance
           .collection('purchase_order')
           .get();
@@ -68,7 +66,6 @@ class _AdminPanelState extends State<AdminPanel>
         (sum, doc) => sum + (doc['totalValue']?.toDouble() ?? 0),
       );
 
-      // Production
       final prodSnapshot = await FirebaseFirestore.instance
           .collection('Production')
           .get();
@@ -78,7 +75,6 @@ class _AdminPanelState extends State<AdminPanel>
         (sum, doc) => sum + (doc['qty']?.toDouble() ?? 0),
       );
 
-      // Issues
       final issueSnapshot = await FirebaseFirestore.instance
           .collection('issue')
           .get();
@@ -88,7 +84,6 @@ class _AdminPanelState extends State<AdminPanel>
         return sum + qty * 10;
       });
 
-      // Exports
       final exportSnapshot = await FirebaseFirestore.instance
           .collection('export')
           .get();
@@ -98,7 +93,6 @@ class _AdminPanelState extends State<AdminPanel>
         return sum + qty * 10;
       });
 
-      // Master LC
       final lcSnapshot = await FirebaseFirestore.instance
           .collection('master_lc')
           .get();
@@ -126,7 +120,6 @@ class _AdminPanelState extends State<AdminPanel>
       backgroundColor: _kIndigoSurface,
       body: Column(
         children: [
-          // Premium App Bar
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -140,7 +133,7 @@ class _AdminPanelState extends State<AdminPanel>
               ),
               boxShadow: [
                 BoxShadow(
-                  color: _kIndigo.withOpacity(0.2),
+                  color: _kIndigo.withValues(alpha: 0.2),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -157,7 +150,7 @@ class _AdminPanelState extends State<AdminPanel>
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: const Icon(
@@ -193,7 +186,7 @@ class _AdminPanelState extends State<AdminPanel>
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
+                            color: Colors.white.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
@@ -207,7 +200,7 @@ class _AdminPanelState extends State<AdminPanel>
                               Text(
                                 'Admin',
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.9),
+                                  color: Colors.white.withValues(alpha: 0.9),
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -219,11 +212,10 @@ class _AdminPanelState extends State<AdminPanel>
                     ),
                   ),
                   const SizedBox(height: 20),
-                  // Custom Tab Bar
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 24),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
+                      color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: TabBar(
@@ -259,7 +251,6 @@ class _AdminPanelState extends State<AdminPanel>
               ),
             ),
           ),
-          // Tab Bar View
           Expanded(
             child: TabBarView(
               controller: _tabController,
@@ -407,7 +398,7 @@ class _DashboardContentState extends State<_DashboardContent>
         border: Border.all(color: Colors.white, width: 1),
         boxShadow: [
           BoxShadow(
-            color: _kIndigo.withOpacity(0.08),
+            color: _kIndigo.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -421,14 +412,14 @@ class _DashboardContentState extends State<_DashboardContent>
               children: [
                 Text(
                   '$greeting! 👋',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
                     color: _kIndigo,
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
+                const Text(
                   'Here\'s your business overview for today.',
                   style: TextStyle(
                     fontSize: 14,
@@ -443,14 +434,14 @@ class _DashboardContentState extends State<_DashboardContent>
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: _kSuccess.withOpacity(0.1),
+                    color: _kSuccess.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.trending_up, size: 14, color: _kSuccess),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4),
                       Text(
                         '+23% vs last month',
                         style: TextStyle(
@@ -471,10 +462,17 @@ class _DashboardContentState extends State<_DashboardContent>
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
-                BoxShadow(color: _kIndigo.withOpacity(0.1), blurRadius: 10),
+                BoxShadow(
+                  color: _kIndigo.withValues(alpha: 0.1),
+                  blurRadius: 10,
+                ),
               ],
             ),
-            child: Icon(Icons.analytics_outlined, size: 52, color: _kIndigo),
+            child: const Icon(
+              Icons.analytics_outlined,
+              size: 52,
+              color: _kIndigo,
+            ),
           ),
         ],
       ),
@@ -621,7 +619,7 @@ class _DashboardContentState extends State<_DashboardContent>
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.blue.withOpacity(0.3),
+                                color: Colors.blue.withValues(alpha: 0.3),
                                 blurRadius: 4,
                               ),
                             ],
@@ -639,11 +637,14 @@ class _DashboardContentState extends State<_DashboardContent>
                         child: Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [_kIndigo, _kIndigo.withOpacity(0.8)],
+                              colors: [
+                                _kIndigo,
+                                _kIndigo.withValues(alpha: 0.8),
+                              ],
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: _kIndigo.withOpacity(0.3),
+                                color: _kIndigo.withValues(alpha: 0.3),
                                 blurRadius: 4,
                               ),
                             ],
@@ -668,7 +669,7 @@ class _DashboardContentState extends State<_DashboardContent>
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.purple.withOpacity(0.3),
+                                color: Colors.purple.withValues(alpha: 0.3),
                                 blurRadius: 4,
                               ),
                             ],
@@ -738,7 +739,7 @@ class _DashboardContentState extends State<_DashboardContent>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -752,7 +753,7 @@ class _DashboardContentState extends State<_DashboardContent>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, size: 18, color: color),
@@ -820,7 +821,7 @@ class _DashboardContentState extends State<_DashboardContent>
                 child: CircularProgressIndicator(
                   value: total > 0 ? value / total : 0,
                   strokeWidth: 8,
-                  backgroundColor: color.withOpacity(0.1),
+                  backgroundColor: color.withValues(alpha: 0.1),
                   valueColor: AlwaysStoppedAnimation<Color>(color),
                 ),
               ),
@@ -860,7 +861,7 @@ class _DashboardContentState extends State<_DashboardContent>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -874,8 +875,8 @@ class _DashboardContentState extends State<_DashboardContent>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [_kIndigo, const Color(0xFF4F46E5)],
+                  gradient: const LinearGradient(
+                    colors: [_kIndigo, Color(0xFF4F46E5)],
                   ),
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -950,7 +951,7 @@ class _DashboardContentState extends State<_DashboardContent>
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: snapshot.data!.length,
-          separatorBuilder: (_, _) => Divider(height: 32, color: _kBorder),
+          separatorBuilder: (_, __) => Divider(height: 32, color: _kBorder),
           itemBuilder: (context, index) {
             final activity = snapshot.data![index];
             return _ActivityTile(activity: activity);
@@ -965,7 +966,6 @@ class _DashboardContentState extends State<_DashboardContent>
     final now = DateTime.now();
 
     try {
-      // Recent POs
       final poRecent = await FirebaseFirestore.instance
           .collection('purchase_order')
           .orderBy('createdAt', descending: true)
@@ -983,7 +983,6 @@ class _DashboardContentState extends State<_DashboardContent>
         });
       }
 
-      // Recent Master LC
       final lcRecent = await FirebaseFirestore.instance
           .collection('master_lc')
           .orderBy('created_at', descending: true)
@@ -1001,7 +1000,6 @@ class _DashboardContentState extends State<_DashboardContent>
         });
       }
 
-      // Recent Production
       final prodRecent = await FirebaseFirestore.instance
           .collection('Production')
           .orderBy('createdAt', descending: true)
@@ -1068,7 +1066,7 @@ class _ModernStatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: item.color.withOpacity(0.3),
+            color: item.color.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -1096,7 +1094,7 @@ class _ModernStatCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Icon(item.icon, color: Colors.white, size: 24),
@@ -1115,7 +1113,7 @@ class _ModernStatCard extends StatelessWidget {
                   item.title,
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -1144,7 +1142,7 @@ class _ModernStatCard extends StatelessWidget {
                   item.subtitle,
                   style: TextStyle(
                     fontSize: 9,
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1171,7 +1169,7 @@ class _ActivityTile extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: (activity['color'] as Color).withOpacity(0.1),
+            color: (activity['color'] as Color).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Icon(
@@ -1196,14 +1194,14 @@ class _ActivityTile extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 activity['description'] as String,
-                style: TextStyle(fontSize: 12, color: _kTextSecondary),
+                style: const TextStyle(fontSize: 12, color: _kTextSecondary),
               ),
               const SizedBox(height: 4),
               Text(
                 _formatTime(activity['time'] as DateTime),
                 style: TextStyle(
                   fontSize: 10,
-                  color: _kTextSecondary.withOpacity(0.7),
+                  color: _kTextSecondary.withValues(alpha: 0.7),
                 ),
               ),
             ],
@@ -1212,7 +1210,7 @@ class _ActivityTile extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: (activity['color'] as Color).withOpacity(0.1),
+            color: (activity['color'] as Color).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -1238,7 +1236,7 @@ class _ActivityTile extends StatelessWidget {
   }
 }
 
-// ─── MASTER L/C CONTENT (পূর্বের কোডের ইন্টিগ্রেটেড ভার্সন) ───
+// ─── MASTER L/C CONTENT ───────────────────────────────────
 class MasterLcContent extends StatefulWidget {
   const MasterLcContent({super.key});
 
@@ -1262,7 +1260,6 @@ class _MasterLcContentState extends State<MasterLcContent> {
   final MasterLCService _service = MasterLCService();
   DateTime? _selectedDate;
   List<String> _projects = [];
-
   List<String> _applicants = [];
 
   static const double _cSl = 52;
@@ -1361,7 +1358,6 @@ class _MasterLcContentState extends State<MasterLcContent> {
       masterLcQty: double.tryParse(_qtyCtrl.text.trim()) ?? 0.0,
     );
     await _service.update(lc);
-
     _snack('Record updated successfully');
     _loadAutocompleteOptions();
   }
@@ -1397,6 +1393,7 @@ class _MasterLcContentState extends State<MasterLcContent> {
     _selectedDate = null;
   }
 
+  // ✅ FIX: date parsing handles both Timestamp and String
   void _fillForm(Map<String, dynamic> data) {
     _tagCtrl.text = data['tag_no'] ?? '';
     _projectCtrl.text = data['project'] ?? '';
@@ -1406,7 +1403,14 @@ class _MasterLcContentState extends State<MasterLcContent> {
     _ttCtrl.text = data['tt_no'] ?? '';
     _valueCtrl.text = (data['master_lc_value'] ?? 0).toString();
     _qtyCtrl.text = (data['master_lc_qty'] ?? 0).toString();
-    _selectedDate = (data['master_lc_date'] as Timestamp?)?.toDate();
+    final rawDate = data['master_lc_date'];
+    if (rawDate is Timestamp) {
+      _selectedDate = rawDate.toDate();
+    } else if (rawDate is String && rawDate.isNotEmpty) {
+      _selectedDate = DateTime.tryParse(rawDate);
+    } else {
+      _selectedDate = null;
+    }
   }
 
   void _showFormDialog({String? docId, Map<String, dynamic>? data}) {
@@ -1631,7 +1635,7 @@ class _MasterLcContentState extends State<MasterLcContent> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: _kError.withOpacity(0.1),
+                  color: _kError.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.delete_outline, color: _kError, size: 28),
@@ -1734,7 +1738,7 @@ class _MasterLcContentState extends State<MasterLcContent> {
   ) {
     return TextFormField(
       controller: controller,
-      keyboardType: TextInputType.numberWithOptions(decimal: true),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
       ],
@@ -1788,7 +1792,7 @@ class _MasterLcContentState extends State<MasterLcContent> {
           focusNode: focusNode,
           decoration: InputDecoration(
             labelText: label,
-            prefixIcon: Icon(
+            prefixIcon: const Icon(
               Icons.business_outlined,
               size: 18,
               color: _kTextSecondary,
@@ -1936,9 +1940,9 @@ class _MasterLcContentState extends State<MasterLcContent> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: _kIndigo,
-                          borderRadius: const BorderRadius.vertical(
+                          borderRadius: BorderRadius.vertical(
                             top: Radius.circular(12),
                           ),
                         ),
@@ -2029,17 +2033,26 @@ class _MasterLcContentState extends State<MasterLcContent> {
                         final doc = entry.value;
                         final d = doc.data() as Map<String, dynamic>;
                         final slNo = (d['sl_no'] as num?)?.toInt() ?? (idx + 1);
-                        final date = (d['master_lc_date'] as Timestamp?)
-                            ?.toDate();
+
+                        // ✅ FIX: handles both Timestamp and String
+                        DateTime? date;
+                        final rawDate = d['master_lc_date'];
+                        if (rawDate is Timestamp) {
+                          date = rawDate.toDate();
+                        } else if (rawDate is String && rawDate.isNotEmpty) {
+                          date = DateTime.tryParse(rawDate);
+                        }
                         final dateStr = date != null
                             ? DateFormat('dd-MM-yyyy').format(date)
                             : '—';
+
                         final isEven = idx % 2 == 0;
                         final bg = isEven ? Colors.white : _kRowAlt;
                         final value =
                             (d['master_lc_value'] as num?)?.toDouble() ?? 0;
                         final qty =
                             (d['master_lc_qty'] as num?)?.toDouble() ?? 0;
+
                         return Container(
                           decoration: BoxDecoration(
                             color: bg,
