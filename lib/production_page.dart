@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import '../models/production.dart';
+import '../services/production_service.dart';
 
 class ProductionPage extends StatefulWidget {
   const ProductionPage({super.key});
@@ -41,6 +43,8 @@ class _ProductionPageState extends State<ProductionPage>
 
   // Status options
   final List<String> _statusOptions = ['All', 'Complete', 'Pending', 'Over'];
+
+  final ProductionService _service = ProductionService();
 
   @override
   void initState() {
@@ -219,25 +223,21 @@ class _ProductionPageState extends State<ProductionPage>
     }
 
     try {
+      final production = Production(
+        id: _editingId ?? '',
+        poNo: _selectedPoNo ?? '',
+        articleNo: _selectedArticle ?? '',
+        color: _selectedColor ?? '',
+        qty: qty.toInt(),
+        date: _selectedDate!.toIso8601String(),
+        createdAt: _editingId == null ? DateTime.now() : null,
+        updatedAt: _editingId != null ? DateTime.now() : null,
+      );
       if (_editingId == null) {
-        await _firestore.collection('Production').add({
-          'date': Timestamp.fromDate(_selectedDate!),
-          'poNo': _selectedPoNo,
-          'articleNo': _selectedArticle,
-          'color': _selectedColor,
-          'qty': qty,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
+        await _service.add(production);
         _showSnackBar('Production added successfully');
       } else {
-        await _firestore.collection('Production').doc(_editingId).update({
-          'date': Timestamp.fromDate(_selectedDate!),
-          'poNo': _selectedPoNo,
-          'articleNo': _selectedArticle,
-          'color': _selectedColor,
-          'qty': qty,
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
+        await _service.update(production);
         _showSnackBar('Production updated successfully');
       }
 
@@ -251,7 +251,7 @@ class _ProductionPageState extends State<ProductionPage>
 
   Future<void> _deleteProduction(String id) async {
     try {
-      await _firestore.collection('Production').doc(id).delete();
+      await _service.delete(id);
       _showSnackBar('Production deleted successfully');
       await _loadProductions();
     } catch (e) {
