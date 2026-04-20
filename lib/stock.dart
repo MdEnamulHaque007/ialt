@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:data_table_2/data_table_2.dart';
+import '../models/stock_report.dart' as stock_model;
+import '../services/stock_service.dart';
 
 // Stock Report পেজ - From-To তারিখের মধ্যে স্টক হিসাব দেখানোর জন্য
 class StockReport extends StatefulWidget {
@@ -21,6 +23,8 @@ class _StockReportState extends State<StockReport> {
 
   List<Map<String, dynamic>> _stockItems = []; // স্টক লিস্ট
   bool _isLoading = false; // লোডিং indicator
+
+  final StockService _stockService = StockService();
 
   // From তারিখ সিলেক্ট করা
   Future<void> _selectFromDate(BuildContext context) async {
@@ -55,163 +59,23 @@ class _StockReportState extends State<StockReport> {
   Future<void> _generateStockReport() async {
     if (_fromDate == null || _toDate == null) return;
     setState(() => _isLoading = true);
-
     try {
-      final Timestamp fromTimestamp = Timestamp.fromDate(_fromDate!);
-      final Timestamp toTimestamp = Timestamp.fromDate(
-        _toDate!.add(const Duration(days: 1)),
-      );
-
-      // ৪টি কালেকশন থেকে ডেটা লোড
-      final results = await Future.wait([
-        firestore
-            .collection('purchase_order')
-            .get(), // Opening (purchase_order)
-        firestore
-            .collection('Production')
-            .where(
-              'date',
-              isGreaterThanOrEqualTo: fromTimestamp,
-              isLessThan: toTimestamp,
-            )
-            .get(),
-        firestore
-            .collection('issue')
-            .where(
-              'date',
-              isGreaterThanOrEqualTo: fromTimestamp,
-              isLessThan: toTimestamp,
-            )
-            .get(),
-        firestore
-            .collection('export')
-            .where(
-              'date',
-              isGreaterThanOrEqualTo: fromTimestamp,
-              isLessThan: toTimestamp,
-            )
-            .get(),
-      ]);
-
-      final List<Map<String, dynamic>> purchaseOrders = results[0].docs
-          .map((doc) => {'id': doc.id, ...doc.data()})
-          .toList();
-
-      final List<Map<String, dynamic>> issues = results[2].docs
-          .map((doc) => {'id': doc.id, ...doc.data()})
-          .toList();
-
-      final List<Map<String, dynamic>> exports = results[3].docs
-          .map(
-            (doc) => {'id': doc.id, ...Map<String, dynamic>.from(doc.data())},
-          )
-          .toList();
-
-      // Stock হিসাবের জন্য map তৈরি - key: "PO|Article|Color"
-      final Map<String, Map<String, dynamic>> stockMap = {};
-
-      // ১. Purchase Order - Opening Stock
-      for (final po in purchaseOrders) {
-        final lines = po['lines'] as List<dynamic>? ?? [];
-        for (final line in lines) {
-          if (line is Map<String, dynamic>) {
-            final poNo = po['poNo']?.toString() ?? '';
-            final articleNo = line['article']?.toString() ?? '';
-            final color = line['color']?.toString() ?? '';
-            final qty =
-                (double.tryParse(line['qty']?.toString() ?? '0') ?? 0.0);
-
-            final key = '$poNo|$articleNo|$color';
-            stockMap.putIfAbsent(
-              key,
-              () => {
-                'poNo': poNo,
-                'articleNo': articleNo,
-                'color': color,
-                'opening': 0.0,
-                'production': 0.0,
-                'issue': 0.0,
-                'export': 0.0,
-                'closing': 0.0,
-              },
-            );
-            stockMap[key]!['opening'] =
-                (stockMap[key]!['opening'] as double) + qty;
-          }
-        }
-      }
-
-      // ৩. Issue (Received) - স্টকে যোগ
-      for (final issue in issues) {
-        final delivery = issue['deliveryCriteria']?.toString() ?? '';
-        final poNo = issue['poNo']?.toString() ?? '';
-        final articleNo = issue['articleNo']?.toString() ?? '';
-        final color = issue['color']?.toString() ?? '';
-        final qty =
-            (double.tryParse(issue['quantity']?.toString() ?? '0') ?? 0.0);
-
-        final key = '$poNo|$articleNo|$color|$delivery';
-        stockMap.putIfAbsent(
-          key,
-          () => {
-            'poNo': poNo,
-            'articleNo': articleNo,
-            'color': color,
-            'deliveryCriteria': delivery,
-            'opening': 0.0,
-            'production': 0.0,
-            'issue': 0.0,
-            'export': 0.0,
-            'closing': 0.0,
-          },
-        );
-        stockMap[key]!['issue'] = (stockMap[key]!['issue'] as double) + qty;
-      }
-
-      // ৪. Export - স্টক থেকে বিয়োগ
-      for (final exp in exports) {
-        final poNo = exp['poNo']?.toString() ?? '';
-        final articleNo = exp['articleNo']?.toString() ?? '';
-        final color = exp['color']?.toString() ?? '';
-        final qty =
-            (double.tryParse(exp['quantity']?.toString() ?? '0') ?? 0.0);
-
-        final key = '$poNo|$articleNo|$color';
-        stockMap.putIfAbsent(
-          key,
-          () => {
-            'poNo': poNo,
-            'articleNo': articleNo,
-            'color': color,
-            'opening': 0.0,
-            'production': 0.0,
-            'issue': 0.0,
-            'export': 0.0,
-            'closing': 0.0,
-          },
-        );
-        stockMap[key]!['export'] = (stockMap[key]!['export'] as double) + qty;
-      }
-
-      // ৫. Closing Stock হিসাব - Opening + Production - Issue - Export
-      final List<Map<String, dynamic>> stockList = [];
-      for (final entry in stockMap.entries) {
-        final item = entry.value;
-        final closing = item['opening']! - item['issue']! - item['export']!;
-        stockList.add({
-          'poNo': item['poNo'],
-          'articleNo': item['articleNo'],
-          'color': item['color'],
-          'opening': item['opening'],
-          'production': item['production'],
-          'issue': item['issue'],
-          'export': item['export'],
-          'closing': closing,
-        });
-      }
-
+      final List<stock_model.StockReport> reports = await _stockService
+          .generateReport(fromDate: _fromDate!, toDate: _toDate!);
       setState(() {
-        _stockItems = stockList;
+        _stockItems = reports
+            .map(
+              (r) => {
+                'poNo': r.poNo,
+                'articleNo': r.articleNo,
+                'color': r.color,
+                'opening': r.opening,
+                'issue': r.issue,
+                'export': r.export,
+                'closing': r.closing,
+              },
+            )
+            .toList();
       });
     } catch (e) {
       if (!mounted) return;
