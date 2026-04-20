@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import '../models/issue.dart' as issue_model;
+import '../services/issue_service.dart';
 
 class IssuePage extends StatefulWidget {
   const IssuePage({super.key});
@@ -46,6 +48,8 @@ class _IssuePageState extends State<IssuePage>
   double _totalIssuedValue = 0;
 
   final List<String> _criteriaOptions = ['All', 'FG', 'B-Grade'];
+
+  final IssueService _service = IssueService();
 
   @override
   void initState() {
@@ -290,24 +294,24 @@ class _IssuePageState extends State<IssuePage>
       return;
     }
 
-    final issueData = {
-      'date': Timestamp.fromDate(_selectedDate!),
-      'voucherNo': _voucherController.text.trim(),
-      'poNo': _selectedPoNo,
-      'articleNo': _selectedArticle,
-      'color': _selectedColor,
-      'quantity': qty,
-      'criteria': _selectedCriteria,
-      'updatedAt': FieldValue.serverTimestamp(),
-    };
-
+    final issue = issue_model.Issue(
+      id: _editingId ?? '',
+      voucherNo: _voucherController.text.trim(),
+      poNo: _selectedPoNo ?? '',
+      articleNo: _selectedArticle ?? '',
+      color: _selectedColor ?? '',
+      quantity: qty.toInt(),
+      criteria: _selectedCriteria ?? 'FG',
+      date: _selectedDate!.toIso8601String(),
+      createdAt: _editingId == null ? DateTime.now() : null,
+      updatedAt: DateTime.now(),
+    );
     try {
       if (_editingId == null) {
-        issueData['createdAt'] = FieldValue.serverTimestamp();
-        await _firestore.collection('issue').add(issueData);
+        await _service.add(issue);
         _showSnackBar('Issue added successfully');
       } else {
-        await _firestore.collection('issue').doc(_editingId).update(issueData);
+        await _service.update(issue);
         _showSnackBar('Issue updated successfully');
       }
 
@@ -321,7 +325,7 @@ class _IssuePageState extends State<IssuePage>
 
   Future<void> _deleteIssue(String id) async {
     try {
-      await _firestore.collection('issue').doc(id).delete();
+      await _service.delete(id);
       _showSnackBar('Issue deleted successfully');
       await _loadData();
     } catch (e) {
