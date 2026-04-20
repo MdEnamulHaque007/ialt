@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import '../models/master_lc.dart';
+import '../services/master_lc_service.dart';
 
 // ─── CONSTANTS ────────────────────────────────────────────
 const _kIndigo = Color(0xFF3730A3);
@@ -1257,8 +1259,10 @@ class _MasterLcContentState extends State<MasterLcContent> {
   final _ttCtrl = TextEditingController();
   final _valueCtrl = TextEditingController();
   final _qtyCtrl = TextEditingController();
+  final MasterLCService _service = MasterLCService();
   DateTime? _selectedDate;
   List<String> _projects = [];
+
   List<String> _applicants = [];
 
   static const double _cSl = 52;
@@ -1296,18 +1300,6 @@ class _MasterLcContentState extends State<MasterLcContent> {
     }
   }
 
-  Future<int> _getNextSlNo() async {
-    final snap = await _lcCol.get();
-    if (snap.docs.isEmpty) return 1;
-    int maxSl = 0;
-    for (final doc in snap.docs) {
-      final d = doc.data() as Map<String, dynamic>;
-      final sl = (d['sl_no'] as num?)?.toInt() ?? 0;
-      if (sl > maxSl) maxSl = sl;
-    }
-    return maxSl + 1;
-  }
-
   Future<void> _pickDate(StateSetter setDialogState) async {
     final picked = await showDatePicker(
       context: context,
@@ -1330,20 +1322,20 @@ class _MasterLcContentState extends State<MasterLcContent> {
       _snack('Please select a date', isError: true);
       return;
     }
-    final slNo = await _getNextSlNo();
-    await _lcCol.add({
-      'sl_no': slNo,
-      'master_lc_date': Timestamp.fromDate(_selectedDate!),
-      'tag_no': _tagCtrl.text.trim(),
-      'project': _projectCtrl.text.trim(),
-      'applicant': _applicantCtrl.text.trim(),
-      'sc_no': _scCtrl.text.trim(),
-      'lc_no': _lcNoCtrl.text.trim(),
-      'tt_no': _ttCtrl.text.trim(),
-      'master_lc_value': double.tryParse(_valueCtrl.text.trim()) ?? 0,
-      'master_lc_qty': double.tryParse(_qtyCtrl.text.trim()) ?? 0,
-      'created_at': FieldValue.serverTimestamp(),
-    });
+    final lc = MasterLC(
+      id: '',
+      slNo: await _service.getNextSlNo(),
+      tagNo: _tagCtrl.text.trim(),
+      project: _projectCtrl.text.trim(),
+      applicant: _applicantCtrl.text.trim(),
+      scNo: _scCtrl.text.trim(),
+      lcNo: _lcNoCtrl.text.trim(),
+      ttNo: _ttCtrl.text.trim(),
+      masterLcDate: _selectedDate!.toIso8601String(),
+      masterLcValue: double.tryParse(_valueCtrl.text.trim()) ?? 0.0,
+      masterLcQty: double.tryParse(_qtyCtrl.text.trim()) ?? 0.0,
+    );
+    await _service.add(lc);
     _snack('Record added successfully');
     _clearForm();
     _loadAutocompleteOptions();
@@ -1355,23 +1347,27 @@ class _MasterLcContentState extends State<MasterLcContent> {
       _snack('Please select a date', isError: true);
       return;
     }
-    await _lcCol.doc(docId).update({
-      'master_lc_date': Timestamp.fromDate(_selectedDate!),
-      'tag_no': _tagCtrl.text.trim(),
-      'project': _projectCtrl.text.trim(),
-      'applicant': _applicantCtrl.text.trim(),
-      'sc_no': _scCtrl.text.trim(),
-      'lc_no': _lcNoCtrl.text.trim(),
-      'tt_no': _ttCtrl.text.trim(),
-      'master_lc_value': double.tryParse(_valueCtrl.text.trim()) ?? 0,
-      'master_lc_qty': double.tryParse(_qtyCtrl.text.trim()) ?? 0,
-    });
+    final lc = MasterLC(
+      id: docId,
+      slNo: 0,
+      tagNo: _tagCtrl.text.trim(),
+      project: _projectCtrl.text.trim(),
+      applicant: _applicantCtrl.text.trim(),
+      scNo: _scCtrl.text.trim(),
+      lcNo: _lcNoCtrl.text.trim(),
+      ttNo: _ttCtrl.text.trim(),
+      masterLcDate: _selectedDate!.toIso8601String(),
+      masterLcValue: double.tryParse(_valueCtrl.text.trim()) ?? 0.0,
+      masterLcQty: double.tryParse(_qtyCtrl.text.trim()) ?? 0.0,
+    );
+    await _service.update(lc);
+
     _snack('Record updated successfully');
     _loadAutocompleteOptions();
   }
 
   Future<void> _deleteRecord(String docId) async {
-    await _lcCol.doc(docId).delete();
+    await _service.delete(docId);
     _snack('Record deleted successfully');
   }
 
