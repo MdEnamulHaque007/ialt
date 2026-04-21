@@ -1026,9 +1026,12 @@ class _IssuePageState extends State<IssuePage>
     final endIndex = (startIndex + _rowsPerPage).clamp(0, totalItems);
     final paginated = filtered.sublist(startIndex, endIndex);
 
-    return Container(
-      color: Colors.grey.shade50,
-      child: Column(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Container(
+          color: Colors.grey.shade50,
+          height: constraints.maxHeight,
+          child: Column(
         children: [
           // Header Section
           Container(
@@ -1482,6 +1485,8 @@ class _IssuePageState extends State<IssuePage>
         ],
       ),
     );
+  },
+);
   }
 
   Widget _buildStatChip({
