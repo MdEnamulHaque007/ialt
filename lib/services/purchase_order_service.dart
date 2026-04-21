@@ -8,7 +8,7 @@ class PurchaseOrderService {
 
   // সব PO এর Stream (realtime)
   Stream<List<PurchaseOrder>> streamAll() {
-    return _col.orderBy('createdAt', descending: true).snapshots().map((
+    return _col.snapshots().map((
       snapshot,
     ) {
       return snapshot.docs.map((doc) {
@@ -23,7 +23,7 @@ class PurchaseOrderService {
   // সব PO একবার get করুন
   Future<List<PurchaseOrder>> getAll() async {
     try {
-      final snapshot = await _col.orderBy('createdAt', descending: true).get();
+      final snapshot = await _col.get();
       return snapshot.docs.map((doc) {
         return PurchaseOrder.fromFirestore(
           doc.id,

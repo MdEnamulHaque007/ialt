@@ -78,7 +78,6 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage>
     try {
       final snapshot = await _firestore
           .collection('purchase_order')
-          .orderBy('createdAt', descending: true)
           .get();
 
       _pos = snapshot.docs.map((doc) {
@@ -150,10 +149,22 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage>
               (a['totalQuantity'] as num?)?.toDouble() ?? 0,
             );
           default: // Date
-            return (b['createdAt'] as Timestamp?)?.toDate().compareTo(
-                  (a['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-                ) ??
-                0;
+            DateTime aDate = DateTime.now();
+            DateTime bDate = DateTime.now();
+            
+            if (a['createdAt'] is Timestamp) {
+              aDate = (a['createdAt'] as Timestamp).toDate();
+            } else if (a['createdAt'] is String) {
+              aDate = DateTime.tryParse(a['createdAt']) ?? DateTime.now();
+            }
+
+            if (b['createdAt'] is Timestamp) {
+              bDate = (b['createdAt'] as Timestamp).toDate();
+            } else if (b['createdAt'] is String) {
+              bDate = DateTime.tryParse(b['createdAt']) ?? DateTime.now();
+            }
+
+            return bDate.compareTo(aDate);
         }
       });
     });

@@ -290,8 +290,13 @@ class _ProductionPageState extends State<ProductionPage>
   }
 
   String _formatDate(dynamic date) {
+    if (date == null) return '';
     if (date is Timestamp) {
       return DateFormat('dd MMM yyyy').format(date.toDate());
+    }
+    if (date is String && date.isNotEmpty) {
+      final parsed = DateTime.tryParse(date);
+      if (parsed != null) return DateFormat('dd MMM yyyy').format(parsed);
     }
     return '';
   }

@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class PurchaseOrderLine {
   final String article;
   final String color;
@@ -80,12 +82,12 @@ class PurchaseOrder {
       totalQuantity: (data['totalQuantity'] as num?)?.toInt() ?? 0,
       totalValue: (data['totalValue'] as num?)?.toDouble() ?? 0.0,
       lines: lines,
-      createdAt: data['createdAt'] != null
-          ? (data['createdAt'] as dynamic).toDate()
-          : null,
-      updatedAt: data['updatedAt'] != null
-          ? (data['updatedAt'] as dynamic).toDate()
-          : null,
+      createdAt: data['createdAt'] is Timestamp 
+          ? (data['createdAt'] as Timestamp).toDate() 
+          : (data['createdAt'] is String ? DateTime.tryParse(data['createdAt']) : null),
+      updatedAt: data['updatedAt'] is Timestamp 
+          ? (data['updatedAt'] as Timestamp).toDate() 
+          : (data['updatedAt'] is String ? DateTime.tryParse(data['updatedAt']) : null),
     );
   }
 

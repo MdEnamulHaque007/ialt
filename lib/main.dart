@@ -18,7 +18,9 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => DataProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => SettingsProvider()..loadSettings()),
+        ChangeNotifierProvider(
+          create: (_) => SettingsProvider()..loadSettings(),
+        ),
       ],
       child: const MyApp(),
     ),
