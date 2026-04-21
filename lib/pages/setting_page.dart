@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../providers/settings_provider.dart';
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
@@ -78,6 +80,10 @@ class _SettingPageState extends State<SettingPage> {
       }, SetOptions(merge: true));
 
       if (mounted) {
+        Provider.of<SettingsProvider>(context, listen: false).updateSettingsLocally(
+          companyName: _companyNameCtrl.text.trim(),
+          email: _emailCtrl.text.trim(),
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Settings saved successfully!'),

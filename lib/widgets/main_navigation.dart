@@ -8,6 +8,7 @@ import '../pages/setting_page.dart';
 import 'package:provider/provider.dart';
 import '../pages/stock.dart';
 import '../providers/auth_provider.dart';
+import '../providers/settings_provider.dart';
 import 'logout_button.dart';
 import '../pages/dashboard.dart';
 
@@ -144,46 +145,58 @@ class _MainNavigationState extends State<MainNavigation> {
         child: Column(
           children: [
             // ── Header ──────────────────────────────────
-            Consumer<AuthProvider>(
-              builder: (context, auth, child) => DrawerHeader(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.indigo, Colors.indigoAccent],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+            DrawerHeader(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.indigo, Colors.indigoAccent],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.account_circle,
+                      size: 40,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.account_circle,
-                        size: 40,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      auth.user?.email ?? 'User',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Management System',
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
-                    ),
-                  ],
-                ),
+                  const SizedBox(height: 8),
+                  Selector<SettingsProvider, String>(
+                    selector: (_, vm) => vm.companyName,
+                    builder: (context, companyName, _) {
+                      return Text(
+                        companyName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 4),
+                  Consumer<AuthProvider>(
+                    builder: (context, auth, _) {
+                      return Text(
+                        auth.user?.email ?? 'User',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
             const Divider(),

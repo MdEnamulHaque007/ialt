@@ -5,6 +5,7 @@ import 'package:ialt/firebase_service.dart';
 import 'package:provider/provider.dart';
 import 'package:ialt/providers/data_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/settings_provider.dart';
 import 'app.dart';
 
 Future<void> main() async {
@@ -17,6 +18,7 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => DataProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()..loadSettings()),
       ],
       child: const MyApp(),
     ),

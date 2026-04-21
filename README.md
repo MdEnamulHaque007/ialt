@@ -1,6 +1,6 @@
-# iALT - Garments Management System
+# IALT - Inventory Management System
 
-A Flutter-based management application for garments/manufacturing businesses.
+A Flutter-based management application for footwear/manufacturing businesses.
 Live at: https://ialt.vercel.app
 
 ## Features
