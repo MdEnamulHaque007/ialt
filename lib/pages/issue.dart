@@ -1026,464 +1026,470 @@ class _IssuePageState extends State<IssuePage>
     final endIndex = (startIndex + _rowsPerPage).clamp(0, totalItems);
     final paginated = filtered.sublist(startIndex, endIndex);
 
-    return Container(
-      color: Colors.grey.shade50,
-      child: Column(
-        children: [
-          // Header Section
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.indigo.shade700,
-                                Colors.indigo.shade500,
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Icon(
-                            Icons.inventory_2_outlined,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Issue Management',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'Track all issued items from production',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(width: 4),
-                    // Stats
-                    _buildStatChip(
-                      label: 'Total Issues',
-                      value: '${filtered.length}',
-                      color: Colors.blue,
-                    ),
-                    _buildStatChip(
-                      label: 'Total Qty',
-                      value: NumberFormat('#,###').format(_totalIssuedQty),
-                      color: Colors.green,
-                    ),
-                    _buildStatChip(
-                      label: 'Total Value',
-                      value:
-                          '\$${NumberFormat('#,###').format(_totalIssuedValue)}',
-                      color: Colors.purple,
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () => _showFormDialog(),
-                      icon: const Icon(Icons.add, size: 16),
-                      label: const Text('+ Add New'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.indigo,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                // Search and Filters
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Search by Voucher, PO, Article...',
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon: _searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.clear),
-                                  onPressed: () {
-                                    setState(() {
-                                      _searchQuery = '';
-                                      _currentPage = 0;
-                                    });
-                                  },
-                                )
-                              : null,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey.shade50,
-                        ),
-                        onChanged: (value) {
-                          setState(() {
-                            _searchQuery = value;
-                            _currentPage = 0;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Criteria Filter
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _filterCriteria,
-                          icon: const Icon(Icons.filter_list),
-                          items: _criteriaOptions.map((criteria) {
-                            return DropdownMenuItem(
-                              value: criteria,
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      color: criteria == 'FG'
-                                          ? Colors.green
-                                          : criteria == 'B-Grade'
-                                          ? Colors.orange
-                                          : Colors.grey,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(criteria),
+    return SizedBox.expand(
+      child: Container(
+        color: Colors.grey.shade50,
+        child: Column(
+          children: [
+            // Header Section
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.indigo.shade700,
+                                  Colors.indigo.shade500,
                                 ],
                               ),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _filterCriteria = value!;
-                              _currentPage = 0;
-                            });
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Date Range Filter
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: _dateRange != null
-                              ? Colors.indigo
-                              : Colors.grey.shade300,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.date_range,
-                          color: _dateRange != null
-                              ? Colors.indigo
-                              : Colors.grey.shade600,
-                        ),
-                        onPressed: _showDateRangePicker,
-                        tooltip: 'Filter by date range',
-                      ),
-                    ),
-                    if (_dateRange != null)
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.indigo.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.clear, size: 18),
-                          onPressed: () {
-                            setState(() {
-                              _dateRange = null;
-                              _currentPage = 0;
-                            });
-                          },
-                          tooltip: 'Clear date filter',
-                        ),
-                      ),
-                    const SizedBox(width: 12),
-                    IconButton(
-                      onPressed: _loadData,
-                      icon: const Icon(Icons.refresh),
-                      tooltip: 'Refresh',
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.grey.shade100,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Table Section
-          Flexible(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _issues.isEmpty
-                ? _buildEmptyState()
-                : filtered.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.search_off,
-                          size: 64,
-                          color: Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No matching issues found',
-                          style: TextStyle(color: Colors.grey.shade600),
-                        ),
-                      ],
-                    ),
-                  )
-                : Column(
-                    children: [
-                      Flexible(
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: SingleChildScrollView(
-                            child: DataTable(
-                              headingRowHeight: 48,
-                              dataRowHeight: 56,
-                              border: TableBorder(
-                                horizontalInside: BorderSide(
-                                  color: Colors.grey.shade200,
-                                ),
-                                verticalInside: BorderSide(
-                                  color: Colors.grey.shade200,
-                                ),
-                              ),
-                              headingRowColor: WidgetStateProperty.resolveWith(
-                                (states) => Colors.indigo.shade50,
-                              ),
-                              columns: [
-                                _buildDataColumn('SL', 50, numeric: true),
-                                _buildDataColumn('Date', 110),
-                                _buildDataColumn('Voucher No', 130),
-                                _buildDataColumn('PO No', 120),
-                                _buildDataColumn('Article', 150),
-                                _buildDataColumn('Color', 100),
-                                _buildDataColumn('Qty', 100, numeric: true),
-                                _buildDataColumn(
-                                  'Unit Price',
-                                  120,
-                                  numeric: true,
-                                ),
-                                _buildDataColumn(
-                                  'Total Value',
-                                  130,
-                                  numeric: true,
-                                ),
-                                _buildDataColumn('Criteria', 100),
-                                _buildDataColumn('Actions', 100),
-                              ],
-                              rows: paginated.asMap().entries.map((entry) {
-                                final idx = startIndex + entry.key;
-                                final issue = entry.value;
-                                final unitPrice = _getUnitPrice(
-                                  issue['poNo']?.toString() ?? '',
-                                  issue['articleNo']?.toString() ?? '',
-                                  issue['color']?.toString() ?? '',
-                                );
-                                final qty =
-                                    (issue['quantity'] as num?)?.toDouble() ??
-                                    0;
-                                final totalValue = unitPrice * qty;
-
-                                return DataRow(
-                                  cells: [
-                                    DataCell(Text('${idx + 1}')),
-                                    DataCell(Text(_formatDate(issue['date']))),
-                                    DataCell(
-                                      Text(
-                                        issue['voucherNo'] ?? '—',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                    DataCell(Text(issue['poNo'] ?? '—')),
-                                    DataCell(Text(issue['articleNo'] ?? '—')),
-                                    DataCell(
-                                      Row(
-                                        children: [
-                                          Container(
-                                            width: 12,
-                                            height: 12,
-                                            decoration: BoxDecoration(
-                                              color: _getColorFromName(
-                                                issue['color'] ?? '',
-                                              ),
-                                              shape: BoxShape.circle,
-                                              border: Border.all(
-                                                color: Colors.grey.shade400,
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(issue['color'] ?? '—'),
-                                        ],
-                                      ),
-                                    ),
-                                    DataCell(
-                                      Text(NumberFormat('#,###').format(qty)),
-                                    ),
-                                    DataCell(
-                                      Text(
-                                        '\$${NumberFormat('#,###.##').format(unitPrice)}',
-                                      ),
-                                    ),
-                                    DataCell(
-                                      Text(
-                                        '\$${NumberFormat('#,###.##').format(totalValue)}',
-                                      ),
-                                    ),
-                                    DataCell(
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: issue['criteria'] == 'FG'
-                                              ? Colors.green.shade50
-                                              : Colors.orange.shade50,
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          issue['criteria'] ?? '—',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w500,
-                                            color: issue['criteria'] == 'FG'
-                                                ? Colors.green.shade700
-                                                : Colors.orange.shade700,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    DataCell(
-                                      Row(
-                                        children: [
-                                          IconButton(
-                                            icon: const Icon(
-                                              Icons.edit,
-                                              size: 18,
-                                            ),
-                                            color: Colors.indigo,
-                                            onPressed: () =>
-                                                _showFormDialog(issue),
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(
-                                              Icons.delete,
-                                              size: 18,
-                                            ),
-                                            color: Colors.red,
-                                            onPressed: () => _showDeleteDialog(
-                                              issue['id'],
-                                              issue['voucherNo'] ?? '',
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              }).toList(),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Icon(
+                              Icons.inventory_2_outlined,
+                              color: Colors.white,
+                              size: 28,
                             ),
                           ),
-                        ),
-                      ),
-                      // Pagination
-                      if (totalItems > 0)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            border: Border(
-                              top: BorderSide(color: Colors.grey.shade200),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
+                          const SizedBox(width: 16),
+                          const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Rows per page:'),
-                              const SizedBox(width: 8),
-                              DropdownButton<int>(
-                                value: _rowsPerPage,
-                                items: [10, 15, 25, 50, 100]
-                                    .map(
-                                      (v) => DropdownMenuItem(
-                                        value: v,
-                                        child: Text('$v'),
-                                      ),
-                                    )
-                                    .toList(),
-                                onChanged: (v) => setState(() {
-                                  _rowsPerPage = v!;
-                                  _currentPage = 0;
-                                }),
-                              ),
-                              const SizedBox(width: 24),
                               Text(
-                                '${startIndex + 1}-$endIndex of $totalItems',
+                                'Issue Management',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                              const SizedBox(width: 24),
-                              IconButton(
-                                icon: const Icon(Icons.chevron_left),
-                                onPressed: _currentPage > 0
-                                    ? () => setState(() => _currentPage--)
-                                    : null,
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.chevron_right),
-                                onPressed: endIndex < totalItems
-                                    ? () => setState(() => _currentPage++)
-                                    : null,
+                              Text(
+                                'Track all issued items from production',
+                                style: TextStyle(color: Colors.grey),
                               ),
                             ],
                           ),
+                        ],
+                      ),
+                      const SizedBox(width: 4),
+                      // Stats
+                      _buildStatChip(
+                        label: 'Total Issues',
+                        value: '${filtered.length}',
+                        color: Colors.blue,
+                      ),
+                      _buildStatChip(
+                        label: 'Total Qty',
+                        value: NumberFormat('#,###').format(_totalIssuedQty),
+                        color: Colors.green,
+                      ),
+                      _buildStatChip(
+                        label: 'Total Value',
+                        value:
+                            '\$${NumberFormat('#,###').format(_totalIssuedValue)}',
+                        color: Colors.purple,
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () => _showFormDialog(),
+                        icon: const Icon(Icons.add, size: 16),
+                        label: const Text('+ Add New'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.indigo,
+                          foregroundColor: Colors.white,
                         ),
+                      ),
                     ],
                   ),
-          ),
-        ],
+                  const SizedBox(height: 20),
+                  // Search and Filters
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Search by Voucher, PO, Article...',
+                            prefixIcon: const Icon(Icons.search),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear),
+                                    onPressed: () {
+                                      setState(() {
+                                        _searchQuery = '';
+                                        _currentPage = 0;
+                                      });
+                                    },
+                                  )
+                                : null,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey.shade50,
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                              _currentPage = 0;
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Criteria Filter
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _filterCriteria,
+                            icon: const Icon(Icons.filter_list),
+                            items: _criteriaOptions.map((criteria) {
+                              return DropdownMenuItem(
+                                value: criteria,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: criteria == 'FG'
+                                            ? Colors.green
+                                            : criteria == 'B-Grade'
+                                            ? Colors.orange
+                                            : Colors.grey,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(criteria),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _filterCriteria = value!;
+                                _currentPage = 0;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Date Range Filter
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: _dateRange != null
+                                ? Colors.indigo
+                                : Colors.grey.shade300,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.date_range,
+                            color: _dateRange != null
+                                ? Colors.indigo
+                                : Colors.grey.shade600,
+                          ),
+                          onPressed: _showDateRangePicker,
+                          tooltip: 'Filter by date range',
+                        ),
+                      ),
+                      if (_dateRange != null)
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.indigo.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.clear, size: 18),
+                            onPressed: () {
+                              setState(() {
+                                _dateRange = null;
+                                _currentPage = 0;
+                              });
+                            },
+                            tooltip: 'Clear date filter',
+                          ),
+                        ),
+                      const SizedBox(width: 12),
+                      IconButton(
+                        onPressed: _loadData,
+                        icon: const Icon(Icons.refresh),
+                        tooltip: 'Refresh',
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.grey.shade100,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Table Section
+            Flexible(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _issues.isEmpty
+                  ? _buildEmptyState()
+                  : filtered.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 64,
+                            color: Colors.grey.shade400,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No matching issues found',
+                            style: TextStyle(color: Colors.grey.shade600),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Column(
+                      children: [
+                        Flexible(
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: SingleChildScrollView(
+                              child: DataTable(
+                                headingRowHeight: 48,
+                                dataRowHeight: 56,
+                                border: TableBorder(
+                                  horizontalInside: BorderSide(
+                                    color: Colors.grey.shade200,
+                                  ),
+                                  verticalInside: BorderSide(
+                                    color: Colors.grey.shade200,
+                                  ),
+                                ),
+                                headingRowColor:
+                                    WidgetStateProperty.resolveWith(
+                                      (states) => Colors.indigo.shade50,
+                                    ),
+                                columns: [
+                                  _buildDataColumn('SL', 50, numeric: true),
+                                  _buildDataColumn('Date', 110),
+                                  _buildDataColumn('Voucher No', 130),
+                                  _buildDataColumn('PO No', 120),
+                                  _buildDataColumn('Article', 150),
+                                  _buildDataColumn('Color', 100),
+                                  _buildDataColumn('Qty', 100, numeric: true),
+                                  _buildDataColumn(
+                                    'Unit Price',
+                                    120,
+                                    numeric: true,
+                                  ),
+                                  _buildDataColumn(
+                                    'Total Value',
+                                    130,
+                                    numeric: true,
+                                  ),
+                                  _buildDataColumn('Criteria', 100),
+                                  _buildDataColumn('Actions', 100),
+                                ],
+                                rows: paginated.asMap().entries.map((entry) {
+                                  final idx = startIndex + entry.key;
+                                  final issue = entry.value;
+                                  final unitPrice = _getUnitPrice(
+                                    issue['poNo']?.toString() ?? '',
+                                    issue['articleNo']?.toString() ?? '',
+                                    issue['color']?.toString() ?? '',
+                                  );
+                                  final qty =
+                                      (issue['quantity'] as num?)?.toDouble() ??
+                                      0;
+                                  final totalValue = unitPrice * qty;
+
+                                  return DataRow(
+                                    cells: [
+                                      DataCell(Text('${idx + 1}')),
+                                      DataCell(
+                                        Text(_formatDate(issue['date'])),
+                                      ),
+                                      DataCell(
+                                        Text(
+                                          issue['voucherNo'] ?? '—',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                      DataCell(Text(issue['poNo'] ?? '—')),
+                                      DataCell(Text(issue['articleNo'] ?? '—')),
+                                      DataCell(
+                                        Row(
+                                          children: [
+                                            Container(
+                                              width: 12,
+                                              height: 12,
+                                              decoration: BoxDecoration(
+                                                color: _getColorFromName(
+                                                  issue['color'] ?? '',
+                                                ),
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: Colors.grey.shade400,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(issue['color'] ?? '—'),
+                                          ],
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Text(NumberFormat('#,###').format(qty)),
+                                      ),
+                                      DataCell(
+                                        Text(
+                                          '\$${NumberFormat('#,###.##').format(unitPrice)}',
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Text(
+                                          '\$${NumberFormat('#,###.##').format(totalValue)}',
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: issue['criteria'] == 'FG'
+                                                ? Colors.green.shade50
+                                                : Colors.orange.shade50,
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            issue['criteria'] ?? '—',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w500,
+                                              color: issue['criteria'] == 'FG'
+                                                  ? Colors.green.shade700
+                                                  : Colors.orange.shade700,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Row(
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.edit,
+                                                size: 18,
+                                              ),
+                                              color: Colors.indigo,
+                                              onPressed: () =>
+                                                  _showFormDialog(issue),
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.delete,
+                                                size: 18,
+                                              ),
+                                              color: Colors.red,
+                                              onPressed: () =>
+                                                  _showDeleteDialog(
+                                                    issue['id'],
+                                                    issue['voucherNo'] ?? '',
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Pagination
+                        if (totalItems > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              border: Border(
+                                top: BorderSide(color: Colors.grey.shade200),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                const Text('Rows per page:'),
+                                const SizedBox(width: 8),
+                                DropdownButton<int>(
+                                  value: _rowsPerPage,
+                                  items: [10, 15, 25, 50, 100]
+                                      .map(
+                                        (v) => DropdownMenuItem(
+                                          value: v,
+                                          child: Text('$v'),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (v) => setState(() {
+                                    _rowsPerPage = v!;
+                                    _currentPage = 0;
+                                  }),
+                                ),
+                                const SizedBox(width: 24),
+                                Text(
+                                  '${startIndex + 1}-$endIndex of $totalItems',
+                                ),
+                                const SizedBox(width: 24),
+                                IconButton(
+                                  icon: const Icon(Icons.chevron_left),
+                                  onPressed: _currentPage > 0
+                                      ? () => setState(() => _currentPage--)
+                                      : null,
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.chevron_right),
+                                  onPressed: endIndex < totalItems
+                                      ? () => setState(() => _currentPage++)
+                                      : null,
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -206,6 +206,7 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage>
     final colorCtrl = TextEditingController();
     final qtyCtrl = TextEditingController();
     final unitPriceCtrl = TextEditingController();
+    bool isAutoFilled = false;
 
     showDialog(
       context: context,
@@ -346,6 +347,8 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage>
                                 label: 'Order By',
                                 hint: 'Customer name',
                                 icon: Icons.person,
+                                readOnly: isAutoFilled,
+                                fillColor: isAutoFilled ? Colors.grey.shade100 : null,
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -368,6 +371,8 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage>
                                 label: 'Project',
                                 hint: 'Project name',
                                 icon: Icons.business,
+                                readOnly: isAutoFilled,
+                                fillColor: isAutoFilled ? Colors.grey.shade100 : null,
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -412,8 +417,29 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage>
                                       ),
                                     )
                                     .toList(),
-                                onChanged: (value) {
+                                onChanged: (value) async {
                                   controllers['tag']!.text = value ?? '';
+                                  if (value != null && value.isNotEmpty) {
+                                    try {
+                                      final snapshot = await FirebaseFirestore.instance
+                                          .collection('master_lc')
+                                          .where('tag_no', isEqualTo: value)
+                                          .limit(1)
+                                          .get();
+                                      if (snapshot.docs.isNotEmpty) {
+                                        final data = snapshot.docs.first.data();
+                                        setDialogState(() {
+                                          controllers['orderBy']!.text = data['applicant']?.toString() ?? '';
+                                          controllers['project']!.text = data['project']?.toString() ?? '';
+                                          isAutoFilled = true;
+                                        });
+                                      }
+                                    } catch (e) {
+                                      debugPrint('Error: $e');
+                                    }
+                                  } else {
+                                    setDialogState(() => isAutoFilled = false);
+                                  }
                                 },
                                 validator: (value) =>
                                     value == null || value.isEmpty
@@ -818,6 +844,7 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage>
     final qtyCtrl = TextEditingController();
     final unitPriceCtrl = TextEditingController();
     int? editingIndex;
+    bool isAutoFilled = false;
 
     showDialog(
       context: context,
@@ -968,6 +995,8 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage>
                                 label: 'Order By',
                                 hint: 'Customer name',
                                 icon: Icons.person,
+                                readOnly: isAutoFilled,
+                                fillColor: isAutoFilled ? Colors.grey.shade100 : null,
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -990,6 +1019,8 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage>
                                 label: 'Project',
                                 hint: 'Project name',
                                 icon: Icons.business,
+                                readOnly: isAutoFilled,
+                                fillColor: isAutoFilled ? Colors.grey.shade100 : null,
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -1035,8 +1066,29 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage>
                                       ),
                                     )
                                     .toList(),
-                                onChanged: (value) {
+                                onChanged: (value) async {
                                   headerControllers['tag']!.text = value ?? '';
+                                  if (value != null && value.isNotEmpty) {
+                                    try {
+                                      final snapshot = await FirebaseFirestore.instance
+                                          .collection('master_lc')
+                                          .where('tag_no', isEqualTo: value)
+                                          .limit(1)
+                                          .get();
+                                      if (snapshot.docs.isNotEmpty) {
+                                        final data = snapshot.docs.first.data();
+                                        setDialogState(() {
+                                          headerControllers['orderBy']!.text = data['applicant']?.toString() ?? '';
+                                          headerControllers['project']!.text = data['project']?.toString() ?? '';
+                                          isAutoFilled = true;
+                                        });
+                                      }
+                                    } catch (e) {
+                                      debugPrint('Error: $e');
+                                    }
+                                  } else {
+                                    setDialogState(() => isAutoFilled = false);
+                                  }
                                 },
                                 validator: (value) =>
                                     value == null || value.isEmpty
@@ -1472,6 +1524,7 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage>
     required IconData icon,
     bool readOnly = false,
     VoidCallback? onTap,
+    Color? fillColor,
   }) {
     return TextField(
       controller: controller,
@@ -1480,6 +1533,8 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage>
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
+        filled: fillColor != null,
+        fillColor: fillColor,
         prefixIcon: Icon(icon, size: 20, color: Colors.indigo.shade400),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         enabledBorder: OutlineInputBorder(
