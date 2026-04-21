@@ -48,14 +48,7 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Activity Log'),
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadLogs),
-        ],
-      ),
-      body: Column(
+    return Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -141,7 +134,6 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
                   ),
           ),
         ],
-      ),
-    );
+      );
   }
 }

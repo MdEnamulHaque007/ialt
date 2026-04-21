@@ -128,13 +128,15 @@ class _ExportPageState extends State<ExportPage>
 
       // Delivery criteria filter
       if (_filterDeliveryCriteria != 'All' &&
-          exp['deliveryCriteria'] != _filterDeliveryCriteria)
+          exp['deliveryCriteria'] != _filterDeliveryCriteria) {
         return false;
+      }
 
       // Selling criteria filter
       if (_filterSellingCriteria != 'All' &&
-          exp['sellingCriteria'] != _filterSellingCriteria)
+          exp['sellingCriteria'] != _filterSellingCriteria) {
         return false;
+      }
 
       return true;
     }).toList();
@@ -493,7 +495,7 @@ class _ExportPageState extends State<ExportPage>
                             labelText: 'PO Number *',
                             border: OutlineInputBorder(),
                           ),
-                          value: _selectedPoNo,
+                          initialValue: _selectedPoNo,
                           items: [
                             const DropdownMenuItem(
                               value: null,
@@ -520,7 +522,7 @@ class _ExportPageState extends State<ExportPage>
                             labelText: 'Article Number *',
                             border: OutlineInputBorder(),
                           ),
-                          value: _selectedArticle,
+                          initialValue: _selectedArticle,
                           items: [
                             const DropdownMenuItem(
                               value: null,
@@ -550,7 +552,7 @@ class _ExportPageState extends State<ExportPage>
                             labelText: 'Color *',
                             border: OutlineInputBorder(),
                           ),
-                          value: _selectedColor,
+                          initialValue: _selectedColor,
                           items: [
                             const DropdownMenuItem(
                               value: null,
@@ -606,7 +608,7 @@ class _ExportPageState extends State<ExportPage>
                             labelText: 'Delivery Criteria *',
                             border: OutlineInputBorder(),
                           ),
-                          value: _selectedDeliveryCriteria,
+                          initialValue: _selectedDeliveryCriteria,
                           items: const [
                             DropdownMenuItem(
                               value: null,
@@ -633,7 +635,7 @@ class _ExportPageState extends State<ExportPage>
                             labelText: 'Selling Criteria *',
                             border: OutlineInputBorder(),
                           ),
-                          value: _selectedSellingCriteria,
+                          initialValue: _selectedSellingCriteria,
                           items: const [
                             DropdownMenuItem(
                               value: null,
@@ -788,15 +790,9 @@ class _ExportPageState extends State<ExportPage>
     final endIndex = (startIndex + _rowsPerPage).clamp(0, totalItems);
     final paginated = filtered.sublist(startIndex, endIndex);
 
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showFormDialog(),
-        icon: const Icon(Icons.add),
-        label: const Text('New Export'),
-        backgroundColor: Colors.green,
-      ),
-      body: Column(
+    return Container(
+      color: Colors.grey.shade50,
+      child: Column(
         children: [
           // Header
           Container(
@@ -898,6 +894,16 @@ class _ExportPageState extends State<ExportPage>
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton.icon(
+                      onPressed: () => _showFormDialog(),
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('+ Add New'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.indigo,
+                        foregroundColor: Colors.white,
                       ),
                     ),
                   ],

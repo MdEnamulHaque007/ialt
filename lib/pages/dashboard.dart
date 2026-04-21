@@ -1,729 +1,434 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'dart:math' as math;
 
-class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+class Dashboard extends StatefulWidget {
+  const Dashboard({super.key});
 
   @override
-  State<DashboardPage> createState() => _DashboardPageState();
+  State<Dashboard> createState() => _DashboardState();
 }
 
-class _DashboardPageState extends State<DashboardPage>
-    with SingleTickerProviderStateMixin {
-  int poCount = 0;
-  double poValue = 0;
-  int productionCount = 0;
-  double productionQty = 0;
-  int issueCount = 0;
-  double issueValue = 0;
-  int exportCount = 0;
-  double exportValue = 0;
+class _DashboardState extends State<Dashboard> {
+  bool _isLoading = true;
 
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _slideAnimation;
+  // Metrics
+  int _lcCount = 0;
+  double _lcValue = 0;
+
+  int _poCount = 0;
+  double _poValue = 0;
+
+  int _prodCount = 0;
+  double _prodQty = 0;
+
+  int _issueCount = 0;
+  double _issueQty = 0;
+
+  int _exportCount = 0;
+  double _exportQty = 0;
+
+  // Recent Activity
+  List<Map<String, dynamic>> _recentActivities = [];
+
+  final NumberFormat _currencyFormat = NumberFormat.currency(
+    symbol: '\$',
+    decimalDigits: 2,
+  );
+  final NumberFormat _numberFormat = NumberFormat('#,###');
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
-    _slideAnimation = Tween<double>(begin: 50, end: 0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
-    _animationController.forward();
-    _loadStats();
+    _loadDashboardData();
   }
 
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
+  Future<void> _loadDashboardData() async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
 
-  Future<void> _loadStats() async {
     try {
-      // Purchase Orders
-      final poSnapshot = await FirebaseFirestore.instance
-          .collection('purchase_order')
-          .get();
-      poCount = poSnapshot.docs.length;
-      poValue = poSnapshot.docs.fold<double>(
-        0,
-        (sum, doc) => sum + (doc['totalValue']?.toDouble() ?? 0),
+      final db = FirebaseFirestore.instance;
+
+      // 1. Master LC (master_lc_value)
+      final lcSnap = await db.collection('master_lc').get();
+      int tempLcCount = lcSnap.size;
+      double tempLcValue = 0;
+      for (var doc in lcSnap.docs) {
+        final data = doc.data();
+        tempLcValue += _parseDouble(data['master_lc_value']);
+      }
+
+      // 2. Purchase Orders (totalValue)
+      final poSnap = await db.collection('purchase_order').get();
+      int tempPoCount = poSnap.size;
+      double tempPoValue = 0;
+      for (var doc in poSnap.docs) {
+        tempPoValue += _parseDouble(doc.data()['totalValue']);
+      }
+
+      // 3. Production (qty)
+      final prodSnap = await db.collection('Production').get();
+      int tempProdCount = prodSnap.size;
+      double tempProdQty = 0;
+      for (var doc in prodSnap.docs) {
+        tempProdQty += _parseDouble(doc.data()['qty']);
+      }
+
+      // 4. FG Issues (quantity)
+      final issueSnap = await db.collection('issue').get();
+      int tempIssueCount = issueSnap.size;
+      double tempIssueQty = 0;
+      for (var doc in issueSnap.docs) {
+        tempIssueQty += _parseDouble(doc.data()['quantity']);
+      }
+
+      // 5. Exports (quantity)
+      final exportSnap = await db.collection('export').get();
+      int tempExportCount = exportSnap.size;
+      double tempExportQty = 0;
+      for (var doc in exportSnap.docs) {
+        tempExportQty += _parseDouble(doc.data()['quantity']);
+      }
+
+      // Fetch Recent Activity (last 5 from PO and Production)
+      List<Map<String, dynamic>> tempActivities = [];
+
+      try {
+        final poRecent = await db
+            .collection('purchase_order')
+            .orderBy('createdAt', descending: true)
+            .limit(5)
+            .get();
+        for (var doc in poRecent.docs) {
+          final data = doc.data();
+          tempActivities.add({
+            'title': 'Purchase Order Created',
+            'description':
+                'PO #${data['po_id'] ?? doc.id} value: ${_currencyFormat.format(_parseDouble(data['totalValue']))}',
+            'time': _parseDate(data['createdAt']),
+            'icon': Icons.shopping_cart_outlined,
+            'color': Colors.blue,
+          });
+        }
+      } catch (e) {
+        // Continue if index is missing or other read error
+      }
+
+      try {
+        final prodRecent = await db
+            .collection('Production')
+            .orderBy('createdAt', descending: true)
+            .limit(5)
+            .get();
+        for (var doc in prodRecent.docs) {
+          final data = doc.data();
+          tempActivities.add({
+            'title': 'Production Entry',
+            'description':
+                'Produced ${_numberFormat.format(_parseDouble(data['qty']))} items',
+            'time': _parseDate(data['createdAt']),
+            'icon': Icons.precision_manufacturing_outlined,
+            'color': Colors.green,
+          });
+        }
+      } catch (e) {
+        // Continue
+      }
+
+      // Sort combined activities and take top 5
+      tempActivities.sort(
+        (a, b) => (b['time'] as DateTime).compareTo(a['time'] as DateTime),
       );
+      _recentActivities = tempActivities.take(5).toList();
 
-      // Production
-      final prodSnapshot = await FirebaseFirestore.instance
-          .collection('Production')
-          .get();
-      productionCount = prodSnapshot.docs.length;
-      productionQty = prodSnapshot.docs.fold<double>(
-        0,
-        (sum, doc) => sum + (doc['qty']?.toDouble() ?? 0),
-      );
-
-      // Issues
-      final issueSnapshot = await FirebaseFirestore.instance
-          .collection('issue')
-          .get();
-      issueCount = issueSnapshot.docs.length;
-      issueValue = issueSnapshot.docs.fold<double>(0, (sum, doc) {
-        final qty = doc['quantity']?.toDouble() ?? 0;
-        return sum + qty * 10;
-      });
-
-      // Exports
-      final exportSnapshot = await FirebaseFirestore.instance
-          .collection('export')
-          .get();
-      exportCount = exportSnapshot.docs.length;
-      exportValue = exportSnapshot.docs.fold<double>(0, (sum, doc) {
-        final qty = doc['quantity']?.toDouble() ?? 0;
-        return sum + qty * 10;
-      });
-
-      if (mounted) setState(() {});
+      if (mounted) {
+        setState(() {
+          _lcCount = tempLcCount;
+          _lcValue = tempLcValue;
+          _poCount = tempPoCount;
+          _poValue = tempPoValue;
+          _prodCount = tempProdCount;
+          _prodQty = tempProdQty;
+          _issueCount = tempIssueCount;
+          _issueQty = tempIssueQty;
+          _exportCount = tempExportCount;
+          _exportQty = tempExportQty;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      debugPrint('Dashboard stats error: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load dashboard data: $e')),
+        );
+      }
     }
+  }
+
+  double _parseDouble(dynamic val) {
+    if (val == null) return 0.0;
+    if (val is num) return val.toDouble();
+    return double.tryParse(val.toString()) ?? 0.0;
+  }
+
+  DateTime _parseDate(dynamic val) {
+    if (val == null) return DateTime.now();
+    if (val is Timestamp) return val.toDate();
+    if (val is String) {
+      return DateTime.tryParse(val) ?? DateTime.now();
+    }
+    return DateTime.now();
+  }
+
+  String _timeAgo(DateTime d) {
+    Duration diff = DateTime.now().difference(d);
+    if (diff.inDays > 365) return '${(diff.inDays / 365).floor()}y ago';
+    if (diff.inDays > 30) return '${(diff.inDays / 30).floor()}mo ago';
+    if (diff.inDays > 0) return '${diff.inDays}d ago';
+    if (diff.inHours > 0) return '${diff.inHours}h ago';
+    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
+    return 'Just now';
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      body: CustomScrollView(
-        slivers: [
-          _buildAppBar(),
-          SliverPadding(
-            padding: const EdgeInsets.all(24),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: SlideTransition(
-                    position:
-                        Tween<Offset>(
-                          begin: const Offset(0, 0.1),
-                          end: Offset.zero,
-                        ).animate(
-                          CurvedAnimation(
-                            parent: _animationController,
-                            curve: Curves.easeOut,
-                          ),
-                        ),
-                    child: _buildWelcomeSection(),
-                  ),
-                ),
-                const SizedBox(height: 32),
-                _buildStatsGrid(),
-                const SizedBox(height: 32),
-                FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: SlideTransition(
-                    position: _slideAnimation.drive(
-                      Tween<Offset>(
-                        begin: const Offset(0, 0.05),
-                        end: Offset.zero,
-                      ),
-                    ),
-                    child: _buildRecentActivity(),
-                  ),
-                ),
-              ]),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAppBar() {
-    return SliverAppBar(
-      expandedHeight: 120,
-      floating: true,
-      pinned: true,
-      stretch: true,
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.indigo,
-      elevation: 0,
-      flexibleSpace: FlexibleSpaceBar(
-        stretchModes: const [StretchMode.zoomBackground],
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.indigo.shade700,
-                Colors.indigo.shade500,
-                Colors.blue.shade400,
-              ],
-            ),
-            borderRadius: const BorderRadius.vertical(
-              bottom: Radius.circular(30),
-            ),
-          ),
-          child: const SizedBox.expand(),
-        ),
-        title: const Text(
-          'Dashboard',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-            color: Colors.white,
-          ),
-        ),
-        centerTitle: false,
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.notifications_outlined),
-          onPressed: () {},
-          color: Colors.white,
-        ),
-        IconButton(
-          icon: const Icon(Icons.refresh),
-          onPressed: _loadStats,
-          color: Colors.white,
-        ),
-        const SizedBox(width: 8),
-      ],
-    );
-  }
-
-  Widget _buildWelcomeSection() {
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.indigo.shade50, Colors.blue.shade50],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.indigo.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Row(
+      color: Colors.grey.shade50,
+      child: Stack(
         children: [
-          Expanded(
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Welcome back! 👋',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.indigo.shade900,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Here\'s what\'s happening with your business today.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.indigo.shade600,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.indigo.withOpacity(0.1),
-                  blurRadius: 10,
-                ),
-              ],
-            ),
-            child: Icon(
-              Icons.analytics_outlined,
-              size: 48,
-              color: Colors.indigo.shade700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatsGrid() {
-    final stats = [
-      _StatData(
-        title: 'Total POs',
-        value: poCount.toString(),
-        subtitle: 'Value: \$${NumberFormat('#,##0').format(poValue)}',
-        icon: Icons.shopping_cart,
-        gradient: [Colors.blue.shade600, Colors.blue.shade400],
-        trend: '+12%',
-        trendUp: true,
-      ),
-      _StatData(
-        title: 'Productions',
-        value: productionCount.toString(),
-        subtitle: NumberFormat('#,##0').format(productionQty),
-        icon: Icons.precision_manufacturing,
-        gradient: [Colors.green.shade600, Colors.green.shade400],
-        trend: '+8%',
-        trendUp: true,
-      ),
-      _StatData(
-        title: 'Issues',
-        value: issueCount.toString(),
-        subtitle: '\$${NumberFormat('#,##0').format(issueValue)}',
-        icon: Icons.inventory_2,
-        gradient: [Colors.orange.shade600, Colors.orange.shade400],
-        trend: '-3%',
-        trendUp: false,
-      ),
-      _StatData(
-        title: 'Exports',
-        value: exportCount.toString(),
-        subtitle: '\$${NumberFormat('#,##0').format(exportValue)}',
-        icon: Icons.local_shipping,
-        gradient: [Colors.purple.shade600, Colors.purple.shade400],
-        trend: '+15%',
-        trendUp: true,
-      ),
-    ];
-
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
-        crossAxisSpacing: 20,
-        mainAxisSpacing: 20,
-        childAspectRatio: 1.1,
-      ),
-      itemCount: stats.length,
-      itemBuilder: (context, index) {
-        return FadeTransition(
-          opacity: _fadeAnimation,
-          child: SlideTransition(
-            position: _slideAnimation.drive(
-              Tween<Offset>(
-                begin: Offset(
-                  0,
-                  0.05 * (index + 1),
-                ), // Move calculation outside
-                end: Offset.zero,
-              ),
-            ),
-            child: _ModernStatCard(data: stats[index]),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildRecentActivity() {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      color: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.indigo.shade600, Colors.blue.shade600],
+                // Header Area
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Overview Dashboard',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
                     ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Icon(
-                    Icons.history_edu_outlined,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+                    IconButton(
+                      icon: const Icon(Icons.refresh),
+                      onPressed: _loadDashboardData,
+                      tooltip: 'Refresh Dashboard',
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(height: 24),
+
+                // Wrap for Stats Cards
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: [
+                    _buildStatCard(
+                      title: 'Master LC',
+                      count: _lcCount,
+                      value: _currencyFormat.format(_lcValue),
+                      subLabel: 'Total LC Value',
+                      icon: Icons.description_outlined,
+                      color: Colors.indigo,
+                    ),
+                    _buildStatCard(
+                      title: 'Purchase Orders',
+                      count: _poCount,
+                      value: _currencyFormat.format(_poValue),
+                      subLabel: 'Total PO Value',
+                      icon: Icons.shopping_cart_outlined,
+                      color: Colors.blue,
+                    ),
+                    _buildStatCard(
+                      title: 'Production',
+                      count: _prodCount,
+                      value: _numberFormat.format(_prodQty),
+                      subLabel: 'Total Quantity',
+                      icon: Icons.precision_manufacturing_outlined,
+                      color: Colors.green,
+                    ),
+                    _buildStatCard(
+                      title: 'FG Issues',
+                      count: _issueCount,
+                      value: _numberFormat.format(_issueQty),
+                      subLabel: 'Total Issued Qty',
+                      icon: Icons.inventory_2_outlined,
+                      color: Colors.orange,
+                    ),
+                    _buildStatCard(
+                      title: 'Export',
+                      count: _exportCount,
+                      value: _numberFormat.format(_exportQty),
+                      subLabel: 'Total Exported Qty',
+                      icon: Icons.local_shipping_outlined,
+                      color: Colors.purple,
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 32),
+
+                // Recent Activity Section
                 const Text(
                   'Recent Activity',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.indigo,
+                    color: Colors.black87,
                   ),
                 ),
-                const Spacer(),
-                TextButton.icon(
-                  onPressed: _loadStats,
-                  icon: const Icon(Icons.sync, size: 18),
-                  label: const Text('Refresh'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.indigo,
-                    backgroundColor: Colors.indigo.shade50,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                const SizedBox(height: 16),
+                Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
+                  child: _recentActivities.isEmpty
+                      ? const Padding(
+                          padding: EdgeInsets.all(32.0),
+                          child: Center(
+                            child: Text(
+                              'No recent activity found.',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _recentActivities.length,
+                          separatorBuilder: (context, index) =>
+                              const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final item = _recentActivities[index];
+                            return ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 8,
+                              ),
+                              leading: CircleAvatar(
+                                backgroundColor: (item['color'] as Color)
+                                    .withValues(alpha: 0.1),
+                                child: Icon(
+                                  item['icon'] as IconData,
+                                  color: item['color'] as Color,
+                                  size: 20,
+                                ),
+                              ),
+                              title: Text(
+                                item['title'],
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Text(item['description']),
+                              trailing: Text(
+                                _timeAgo(item['time'] as DateTime),
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            _buildActivityTimeline(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActivityTimeline() {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _fetchRecentActivities(),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(
-            child: Column(
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: Colors.grey.shade400,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Unable to load activities',
-                  style: TextStyle(color: Colors.grey.shade600),
-                ),
-              ],
-            ),
-          );
-        }
-
-        if (!snapshot.hasData) {
-          return const Center(
-            child: Column(
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Loading activities...'),
-              ],
-            ),
-          );
-        }
-
-        final activities = snapshot.data!;
-
-        if (activities.isEmpty) {
-          return Center(
-            child: Column(
-              children: [
-                Icon(
-                  Icons.inbox_outlined,
-                  size: 64,
-                  color: Colors.grey.shade400,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No recent activities',
-                  style: TextStyle(color: Colors.grey.shade600),
-                ),
-              ],
-            ),
-          );
-        }
-
-        return ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: activities.length,
-          separatorBuilder: (context, index) =>
-              Divider(height: 32, color: Colors.grey.shade200),
-          itemBuilder: (context, index) {
-            final activity = activities[index];
-            return _ActivityItem(activity: activity);
-          },
-        );
-      },
-    );
-  }
-
-  Future<List<Map<String, dynamic>>> _fetchRecentActivities() async {
-    final activities = <Map<String, dynamic>>[];
-    final now = DateTime.now();
-
-    try {
-      // Fetch recent POs
-      final poRecent = await FirebaseFirestore.instance
-          .collection('purchase_order')
-          .orderBy('createdAt', descending: true)
-          .limit(3)
-          .get();
-
-      for (var doc in poRecent.docs) {
-        activities.add({
-          'type': 'po',
-          'title': 'New Purchase Order',
-          'description':
-              'PO #${doc.id} created with value \$${doc['totalValue']}',
-          'time': doc['createdAt']?.toDate() ?? now,
-          'icon': Icons.shopping_cart,
-          'color': Colors.blue,
-        });
-      }
-
-      // Fetch recent Productions
-      final prodRecent = await FirebaseFirestore.instance
-          .collection('Production')
-          .orderBy('createdAt', descending: true)
-          .limit(3)
-          .get();
-
-      for (var doc in prodRecent.docs) {
-        activities.add({
-          'type': 'production',
-          'title': 'Production Update',
-          'description': 'Production batch completed: ${doc['qty']} units',
-          'time': doc['createdAt']?.toDate() ?? now,
-          'icon': Icons.precision_manufacturing,
-          'color': Colors.green,
-        });
-      }
-
-      // Sort by time
-      activities.sort((a, b) => b['time'].compareTo(a['time']));
-
-      return activities.take(5).toList();
-    } catch (e) {
-      debugPrint('Error fetching activities: $e');
-      return [];
-    }
-  }
-}
-
-class _StatData {
-  final String title;
-  final String value;
-  final String subtitle;
-  final IconData icon;
-  final List<Color> gradient;
-  final String trend;
-  final bool trendUp;
-
-  _StatData({
-    required this.title,
-    required this.value,
-    required this.subtitle,
-    required this.icon,
-    required this.gradient,
-    required this.trend,
-    required this.trendUp,
-  });
-}
-
-class _ModernStatCard extends StatelessWidget {
-  final _StatData data;
-
-  const _ModernStatCard({required this.data});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: data.gradient,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: data.gradient.first.withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
           ),
+          if (_isLoading)
+            Positioned.fill(
+              child: Container(
+                color: Colors.white54,
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('${data.title} details opened'),
-                behavior: SnackBarBehavior.floating,
-                backgroundColor: data.gradient.first,
-              ),
-            );
-          },
-          borderRadius: BorderRadius.circular(24),
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Icon(data.icon, color: Colors.white, size: 28),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  data.value,
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  data.title,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.white.withOpacity(0.9),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      data.trendUp ? Icons.trending_up : Icons.trending_down,
-                      size: 14,
-                      color: Colors.white,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      data.trend,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  data.subtitle,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.white.withOpacity(0.8),
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
-}
 
-class _ActivityItem extends StatelessWidget {
-  final Map<String, dynamic> activity;
-
-  const _ActivityItem({required this.activity});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: (activity['color'] as Color).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Icon(
-            activity['icon'] as IconData,
-            color: activity['color'] as Color,
-            size: 24,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
+  Widget _buildStatCard({
+    required String title,
+    required int count,
+    required String value,
+    required String subLabel,
+    required IconData icon,
+    required Color color,
+  }) {
+    return SizedBox(
+      width: 200,
+      child: Card(
+        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade700,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(icon, color: color, size: 20),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
               Text(
-                activity['title'] as String,
+                NumberFormat('#,###').format(count),
                 style: const TextStyle(
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  fontSize: 15,
+                  color: Colors.black87,
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                activity['description'] as String,
-                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+              const Text(
+                'Records',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 12),
+              const Divider(),
+              const SizedBox(height: 8),
               Text(
-                _formatTime(activity['time'] as DateTime),
-                style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                value,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+              Text(
+                subLabel,
+                style: const TextStyle(fontSize: 11, color: Colors.grey),
               ),
             ],
           ),
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: (activity['color'] as Color).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            'View',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: activity['color'] as Color,
-            ),
-          ),
-        ),
-      ],
+      ),
     );
-  }
-
-  String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
-
-    if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'Just now';
-    }
   }
 }

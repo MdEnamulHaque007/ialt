@@ -104,7 +104,7 @@ class _ProductionPageState extends State<ProductionPage>
             prod['poNo']?.toString().toLowerCase().contains(searchLower) ??
             false;
         final articleMatch =
-            prod['articleNo']?.toString().toLowerCase().contains(searchLower) ??
+            prod['article']?.toString().toLowerCase().contains(searchLower) ??
             false;
         final colorMatch =
             prod['color']?.toString().toLowerCase().contains(searchLower) ??
@@ -130,7 +130,7 @@ class _ProductionPageState extends State<ProductionPage>
 
   double _getTotalOrderQuantity(Map<String, dynamic> production) {
     final poNo = production['poNo']?.toString() ?? '';
-    final article = production['articleNo']?.toString() ?? '';
+    final article = production['article']?.toString() ?? '';
     final color = production['color']?.toString() ?? '';
 
     for (final po in _purchaseOrders) {
@@ -151,7 +151,7 @@ class _ProductionPageState extends State<ProductionPage>
 
   double _getUnitPrice(Map<String, dynamic> production) {
     final poNo = production['poNo']?.toString() ?? '';
-    final article = production['articleNo']?.toString() ?? '';
+    final article = production['article']?.toString() ?? '';
     final color = production['color']?.toString() ?? '';
 
     for (final po in _purchaseOrders) {
@@ -301,7 +301,7 @@ class _ProductionPageState extends State<ProductionPage>
     if (production != null) {
       _selectedDate = (production['date'] as Timestamp?)?.toDate();
       _selectedPoNo = production['poNo']?.toString();
-      _selectedArticle = production['articleNo']?.toString();
+      _selectedArticle = production['article']?.toString();
       _selectedColor = production['color']?.toString();
       _qtyController.text = production['qty']?.toString() ?? '';
       _editingId = production['id'];
@@ -723,18 +723,9 @@ class _ProductionPageState extends State<ProductionPage>
     final endIndex = (startIndex + _rowsPerPage).clamp(0, totalItems);
     final paginated = filtered.sublist(startIndex, endIndex);
 
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showFormDialog(),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'New Production',
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: Colors.indigo,
-      ),
-      body: Column(
+    return Container(
+      color: Colors.grey.shade50,
+      child: Column(
         children: [
           // Header Section
           Container(
@@ -779,6 +770,16 @@ class _ProductionPageState extends State<ProductionPage>
                       'Value',
                       '\$${NumberFormat('#,###').format(totalValue)}',
                       Colors.purple,
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton.icon(
+                      onPressed: () => _showFormDialog(),
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('+ Add New'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.indigo,
+                        foregroundColor: Colors.white,
+                      ),
                     ),
                   ],
                 ),
@@ -972,7 +973,7 @@ class _ProductionPageState extends State<ProductionPage>
                                       center: true,
                                     ),
                                     _buildDataCell(
-                                      prod['articleNo'] ?? '—',
+                                      prod['article'] ?? '—',
                                       150,
                                       center: true,
                                     ),
@@ -997,7 +998,7 @@ class _ProductionPageState extends State<ProductionPage>
                                   ],
                                 ),
                               );
-                            }).toList(),
+                            }),
                             // Footer Summary
                             Container(
                               color: Colors.indigo.shade50,

@@ -951,7 +951,7 @@ class _DashboardContentState extends State<_DashboardContent>
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: snapshot.data!.length,
-          separatorBuilder: (_, __) => Divider(height: 32, color: _kBorder),
+          separatorBuilder: (_, _) => Divider(height: 32, color: _kBorder),
           itemBuilder: (context, index) {
             final activity = snapshot.data![index];
             return _ActivityTile(activity: activity);

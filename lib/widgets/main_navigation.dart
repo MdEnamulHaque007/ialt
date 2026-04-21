@@ -4,6 +4,7 @@ import '../pages/issue.dart';
 import '../pages/master_lc_page.dart';
 import '../pages/purchase_order_page.dart';
 import '../pages/production_page.dart';
+import '../pages/setting_page.dart';
 import 'package:provider/provider.dart';
 import '../pages/stock.dart';
 import '../providers/auth_provider.dart';
@@ -17,12 +18,7 @@ class ReportPage extends StatelessWidget {
       const _PlaceholderPage(title: 'Report', icon: Icons.bar_chart);
 }
 
-class SettingPage extends StatelessWidget {
-  const SettingPage({super.key});
-  @override
-  Widget build(BuildContext context) =>
-      const _PlaceholderPage(title: 'Setting', icon: Icons.settings);
-}
+// SettingPage is now imported from ../pages/setting_page.dart
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});

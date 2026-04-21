@@ -25,7 +25,7 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage>
 
   // Search & Filter
   final TextEditingController _searchController = TextEditingController();
-  String _filterStatus = 'All';
+  final String _filterStatus = 'All';
   String _sortBy = 'Date';
 
   // Animation
@@ -561,7 +561,7 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage>
                               : ListView.separated(
                                   shrinkWrap: true,
                                   itemCount: tempLines.length,
-                                  separatorBuilder: (_, __) =>
+                                  separatorBuilder: (_, _) =>
                                       const SizedBox(height: 8),
                                   itemBuilder: (context, index) {
                                     final line = tempLines[index];
@@ -1196,7 +1196,7 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage>
                               : ListView.separated(
                                   shrinkWrap: true,
                                   itemCount: tempLines.length,
-                                  separatorBuilder: (_, __) =>
+                                  separatorBuilder: (_, _) =>
                                       const SizedBox(height: 8),
                                   itemBuilder: (context, index) {
                                     final line = tempLines[index];
@@ -1595,9 +1595,9 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      body: Column(
+    return Container(
+      color: Colors.grey.shade50,
+      child: Column(
         children: [
           // Header Section
           Container(
@@ -2141,7 +2141,7 @@ class _LineItemsPanel extends StatelessWidget {
               : ListView.separated(
                   padding: const EdgeInsets.all(16),
                   itemCount: lines.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final line = lines[index];
                     final qty = (line['qty'] as num?)?.toDouble() ?? 0;

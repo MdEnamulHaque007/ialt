@@ -122,9 +122,9 @@ class _AdminPanelState extends State<AdminPanel>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _kIndigoSurface,
-      body: Column(
+    return Container(
+      color: _kIndigoSurface,
+      child: Column(
         children: [
           // Premium App Bar
           Container(
@@ -950,7 +950,7 @@ class _DashboardContentState extends State<_DashboardContent>
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: snapshot.data!.length,
-          separatorBuilder: (_, __) => Divider(height: 32, color: _kBorder),
+          separatorBuilder: (_, _) => Divider(height: 32, color: _kBorder),
           itemBuilder: (context, index) {
             final activity = snapshot.data![index];
             return _ActivityTile(activity: activity);
@@ -1259,6 +1259,8 @@ class _MasterLcContentState extends State<MasterLcContent> {
   final _ttCtrl = TextEditingController();
   final _valueCtrl = TextEditingController();
   final _qtyCtrl = TextEditingController();
+  final _searchCtrl = TextEditingController();
+  String _searchQuery = '';
   final MasterLCService _service = MasterLCService();
   DateTime? _selectedDate;
   List<String> _projects = [];
@@ -1397,6 +1399,43 @@ class _MasterLcContentState extends State<MasterLcContent> {
     _selectedDate = null;
   }
 
+  DateTime? _parseAnyDate(dynamic val) {
+    if (val == null) return null;
+    if (val is Timestamp) return val.toDate();
+    if (val is DateTime) return val;
+    if (val is String) {
+      var d = DateTime.tryParse(val);
+      if (d != null) return d;
+      try {
+        final parts = val.split(' ');
+        if (parts.length >= 4) {
+          final monthStr = parts[1];
+          final dayStr = parts[2];
+          final yearStr = parts[3];
+          const months = {
+            'Jan': '01',
+            'Feb': '02',
+            'Mar': '03',
+            'Apr': '04',
+            'May': '05',
+            'Jun': '06',
+            'Jul': '07',
+            'Aug': '08',
+            'Sep': '09',
+            'Oct': '10',
+            'Nov': '11',
+            'Dec': '12',
+          };
+          final mm = months[monthStr];
+          if (mm != null) {
+            return DateTime.tryParse('$yearStr-$mm-${dayStr.padLeft(2, '0')}');
+          }
+        }
+      } catch (_) {}
+    }
+    return null;
+  }
+
   void _fillForm(Map<String, dynamic> data) {
     _tagCtrl.text = data['tag_no'] ?? '';
     _projectCtrl.text = data['project'] ?? '';
@@ -1406,11 +1445,7 @@ class _MasterLcContentState extends State<MasterLcContent> {
     _ttCtrl.text = data['tt_no'] ?? '';
     _valueCtrl.text = (data['master_lc_value'] ?? 0).toString();
     _qtyCtrl.text = (data['master_lc_qty'] ?? 0).toString();
-    _selectedDate = data['master_lc_date'] is Timestamp
-        ? (data['master_lc_date'] as Timestamp?)?.toDate()
-        : data['master_lc_date'] is String
-        ? DateTime.parse(data['master_lc_date'])
-        : null;
+    _selectedDate = _parseAnyDate(data['master_lc_date']);
   }
 
   void _showFormDialog({String? docId, Map<String, dynamic>? data}) {
@@ -1783,8 +1818,9 @@ class _MasterLcContentState extends State<MasterLcContent> {
       onSelected: (selection) => controller.text = selection,
       fieldViewBuilder: (ctx, fieldCtrl, focusNode, onFieldSubmitted) {
         fieldCtrl.addListener(() {
-          if (controller.text != fieldCtrl.text)
+          if (controller.text != fieldCtrl.text) {
             controller.text = fieldCtrl.text;
+          }
         });
         return TextFormField(
           controller: fieldCtrl,
@@ -1888,6 +1924,41 @@ class _MasterLcContentState extends State<MasterLcContent> {
               ],
             ),
           ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            color: Colors.white,
+            child: TextField(
+              controller: _searchCtrl,
+              decoration: InputDecoration(
+                hintText: 'Search by Tag, LC, Project, Applicant or SC...',
+                prefixIcon: const Icon(Icons.search, color: _kIndigo),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 20),
+                        onPressed: () {
+                          _searchCtrl.clear();
+                          setState(() {
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: _kBorder),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 0,
+                  horizontal: 16,
+                ),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value.toLowerCase();
+                });
+              },
+            ),
+          ),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: _lcCol.orderBy('sl_no').snapshots(),
@@ -1905,7 +1976,37 @@ class _MasterLcContentState extends State<MasterLcContent> {
                     ),
                   );
                 }
-                final docs = snapshot.data?.docs ?? [];
+                var docs = snapshot.data?.docs ?? [];
+                if (_searchQuery.isNotEmpty) {
+                  docs = docs.where((doc) {
+                    final d = doc.data() as Map<String, dynamic>;
+                    final tag = (d['tag_no']?.toString() ?? '').toLowerCase();
+                    final lc = (d['lc_no']?.toString() ?? '').toLowerCase();
+                    final project = (d['project']?.toString() ?? '')
+                        .toLowerCase();
+                    final applicant = (d['applicant']?.toString() ?? '')
+                        .toLowerCase();
+                    final sc = (d['sc_no']?.toString() ?? '').toLowerCase();
+                    return tag.contains(_searchQuery) ||
+                        lc.contains(_searchQuery) ||
+                        project.contains(_searchQuery) ||
+                        applicant.contains(_searchQuery) ||
+                        sc.contains(_searchQuery);
+                  }).toList();
+                }
+
+                docs.sort((a, b) {
+                  final aData = a.data() as Map<String, dynamic>;
+                  final bData = b.data() as Map<String, dynamic>;
+                  final aSlNo = (aData['sl_no'] is num)
+                      ? (aData['sl_no'] as num).toInt()
+                      : int.tryParse(aData['sl_no']?.toString() ?? '0') ?? 0;
+                  final bSlNo = (bData['sl_no'] is num)
+                      ? (bData['sl_no'] as num).toInt()
+                      : int.tryParse(bData['sl_no']?.toString() ?? '0') ?? 0;
+                  return aSlNo.compareTo(bSlNo);
+                });
+
                 if (docs.isEmpty) {
                   return Center(
                     child: Column(
@@ -1934,247 +2035,273 @@ class _MasterLcContentState extends State<MasterLcContent> {
                   );
                 }
                 return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: _kIndigo,
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(12),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            _buildTableCell(
-                              'SL',
-                              _cSl,
-                              bg: _kIndigo,
-                              textColor: Colors.white,
-                              bold: true,
-                            ),
-                            _buildTableCell(
-                              'Date',
-                              _cDate,
-                              bg: _kIndigo,
-                              textColor: Colors.white,
-                              bold: true,
-                            ),
-                            _buildTableCell(
-                              'TAG No',
-                              _cTag,
-                              bg: _kIndigo,
-                              textColor: Colors.white,
-                              bold: true,
-                            ),
-                            _buildTableCell(
-                              'Project',
-                              _cProject,
-                              bg: _kIndigo,
-                              textColor: Colors.white,
-                              bold: true,
-                            ),
-                            _buildTableCell(
-                              'Applicant',
-                              _cApplicant,
-                              bg: _kIndigo,
-                              textColor: Colors.white,
-                              bold: true,
-                            ),
-                            _buildTableCell(
-                              'SC No',
-                              _cSc,
-                              bg: _kIndigo,
-                              textColor: Colors.white,
-                              bold: true,
-                            ),
-                            _buildTableCell(
-                              'L/C No',
-                              _cLc,
-                              bg: _kIndigo,
-                              textColor: Colors.white,
-                              bold: true,
-                            ),
-                            _buildTableCell(
-                              'TT No',
-                              _cTt,
-                              bg: _kIndigo,
-                              textColor: Colors.white,
-                              bold: true,
-                            ),
-                            _buildTableCell(
-                              'Value',
-                              _cValue,
-                              bg: _kIndigo,
-                              textColor: Colors.white,
-                              bold: true,
-                            ),
-                            _buildTableCell(
-                              'Qty',
-                              _cQty,
-                              bg: _kIndigo,
-                              textColor: Colors.white,
-                              bold: true,
-                            ),
-                            _buildTableCell(
-                              'Action',
-                              _cAction,
-                              bg: _kIndigo,
-                              textColor: Colors.white,
-                              bold: true,
-                            ),
-                          ],
-                        ),
-                      ),
-                      ...docs.asMap().entries.map((entry) {
-                        final idx = entry.key;
-                        final doc = entry.value;
-                        final d = doc.data() as Map<String, dynamic>;
-                        final slNo = (d['sl_no'] as num?)?.toInt() ?? (idx + 1);
-                        final date = (d['master_lc_date'] as Timestamp?)
-                            ?.toDate();
-                        final dateStr = date != null
-                            ? DateFormat('dd-MM-yyyy').format(date)
-                            : '—';
-                        final isEven = idx % 2 == 0;
-                        final bg = isEven ? Colors.white : _kRowAlt;
-                        final value =
-                            (d['master_lc_value'] as num?)?.toDouble() ?? 0;
-                        final qty =
-                            (d['master_lc_qty'] as num?)?.toDouble() ?? 0;
-                        return Container(
+                  scrollDirection: Axis.vertical,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
                           decoration: BoxDecoration(
-                            color: bg,
-                            border: Border(
-                              bottom: BorderSide(color: _kBorder, width: 0.5),
+                            color: _kIndigo,
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12),
                             ),
                           ),
                           child: Row(
                             children: [
-                              Container(
-                                width: _cSl,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 11,
-                                ),
-                                color: bg,
-                                alignment: Alignment.center,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 7,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _kIndigoLight,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    '$slNo',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                      color: _kIndigo,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              _buildTableCell(dateStr, _cDate, bg: bg),
                               _buildTableCell(
-                                d['tag_no'] ?? '—',
-                                _cTag,
-                                bg: bg,
+                                'SL',
+                                _cSl,
+                                bg: _kIndigo,
+                                textColor: Colors.white,
                                 bold: true,
-                                textColor: _kIndigo,
                               ),
                               _buildTableCell(
-                                d['project'] ?? '—',
+                                'Date',
+                                _cDate,
+                                bg: _kIndigo,
+                                textColor: Colors.white,
+                                bold: true,
+                              ),
+                              _buildTableCell(
+                                'TAG No',
+                                _cTag,
+                                bg: _kIndigo,
+                                textColor: Colors.white,
+                                bold: true,
+                              ),
+                              _buildTableCell(
+                                'Project',
                                 _cProject,
-                                bg: bg,
+                                bg: _kIndigo,
+                                textColor: Colors.white,
+                                bold: true,
                               ),
                               _buildTableCell(
-                                d['applicant'] ?? '—',
+                                'Applicant',
                                 _cApplicant,
-                                bg: bg,
+                                bg: _kIndigo,
+                                textColor: Colors.white,
+                                bold: true,
                               ),
-                              _buildTableCell(d['sc_no'] ?? '—', _cSc, bg: bg),
-                              _buildTableCell(d['lc_no'] ?? '—', _cLc, bg: bg),
-                              _buildTableCell(d['tt_no'] ?? '—', _cTt, bg: bg),
                               _buildTableCell(
-                                value > 0 ? '\$${_numFmt.format(value)}' : '—',
+                                'SC No',
+                                _cSc,
+                                bg: _kIndigo,
+                                textColor: Colors.white,
+                                bold: true,
+                              ),
+                              _buildTableCell(
+                                'L/C No',
+                                _cLc,
+                                bg: _kIndigo,
+                                textColor: Colors.white,
+                                bold: true,
+                              ),
+                              _buildTableCell(
+                                'TT No',
+                                _cTt,
+                                bg: _kIndigo,
+                                textColor: Colors.white,
+                                bold: true,
+                              ),
+                              _buildTableCell(
+                                'Value',
                                 _cValue,
-                                bg: bg,
-                                bold: value > 0,
+                                bg: _kIndigo,
+                                textColor: Colors.white,
+                                bold: true,
                               ),
                               _buildTableCell(
-                                qty > 0 ? _numFmt.format(qty) : '—',
+                                'Qty',
                                 _cQty,
-                                bg: bg,
+                                bg: _kIndigo,
+                                textColor: Colors.white,
+                                bold: true,
                               ),
-                              Container(
-                                width: _cAction,
-                                color: bg,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 8,
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Tooltip(
-                                      message: 'Edit',
-                                      child: InkWell(
-                                        onTap: () => _showFormDialog(
-                                          docId: doc.id,
-                                          data: d,
-                                        ),
-                                        borderRadius: BorderRadius.circular(6),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(6),
-                                          decoration: BoxDecoration(
-                                            color: Colors.blue.shade50,
-                                            borderRadius: BorderRadius.circular(
-                                              6,
-                                            ),
-                                          ),
-                                          child: Icon(
-                                            Icons.edit_outlined,
-                                            color: Colors.blue.shade600,
-                                            size: 15,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Tooltip(
-                                      message: 'Delete',
-                                      child: InkWell(
-                                        onTap: () =>
-                                            _showDeleteDialog(doc.id, slNo),
-                                        borderRadius: BorderRadius.circular(6),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(6),
-                                          decoration: BoxDecoration(
-                                            color: Colors.red.shade50,
-                                            borderRadius: BorderRadius.circular(
-                                              6,
-                                            ),
-                                          ),
-                                          child: Icon(
-                                            Icons.delete_outline,
-                                            color: Colors.red.shade600,
-                                            size: 15,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                              _buildTableCell(
+                                'Action',
+                                _cAction,
+                                bg: _kIndigo,
+                                textColor: Colors.white,
+                                bold: true,
                               ),
                             ],
                           ),
-                        );
-                      }),
-                    ],
+                        ),
+                        ...docs.asMap().entries.map((entry) {
+                          final idx = entry.key;
+                          final doc = entry.value;
+                          final d = doc.data() as Map<String, dynamic>;
+                          final slNo =
+                              int.tryParse(d['sl_no']?.toString() ?? '') ??
+                              (idx + 1);
+                          final date = _parseAnyDate(d['master_lc_date']);
+                          final dateStr = date != null
+                              ? DateFormat('dd-MM-yyyy').format(date)
+                              : '—';
+                          final isEven = idx % 2 == 0;
+                          final bg = isEven ? Colors.white : _kRowAlt;
+                          final value =
+                              double.tryParse(
+                                d['master_lc_value']?.toString() ?? '',
+                              ) ??
+                              0.0;
+                          final qty =
+                              double.tryParse(
+                                d['master_lc_qty']?.toString() ?? '',
+                              ) ??
+                              0.0;
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: bg,
+                              border: Border(
+                                bottom: BorderSide(color: _kBorder, width: 0.5),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: _cSl,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 11,
+                                  ),
+                                  color: bg,
+                                  alignment: Alignment.center,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 7,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _kIndigoLight,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      '$slNo',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: _kIndigo,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                _buildTableCell(dateStr, _cDate, bg: bg),
+                                _buildTableCell(
+                                  d['tag_no'] ?? '—',
+                                  _cTag,
+                                  bg: bg,
+                                  bold: true,
+                                  textColor: _kIndigo,
+                                ),
+                                _buildTableCell(
+                                  d['project'] ?? '—',
+                                  _cProject,
+                                  bg: bg,
+                                ),
+                                _buildTableCell(
+                                  d['applicant'] ?? '—',
+                                  _cApplicant,
+                                  bg: bg,
+                                ),
+                                _buildTableCell(
+                                  d['sc_no'] ?? '—',
+                                  _cSc,
+                                  bg: bg,
+                                ),
+                                _buildTableCell(
+                                  d['lc_no'] ?? '—',
+                                  _cLc,
+                                  bg: bg,
+                                ),
+                                _buildTableCell(
+                                  d['tt_no'] ?? '—',
+                                  _cTt,
+                                  bg: bg,
+                                ),
+                                _buildTableCell(
+                                  value > 0
+                                      ? '\$${_numFmt.format(value)}'
+                                      : '—',
+                                  _cValue,
+                                  bg: bg,
+                                  bold: value > 0,
+                                ),
+                                _buildTableCell(
+                                  qty > 0 ? _numFmt.format(qty) : '—',
+                                  _cQty,
+                                  bg: bg,
+                                ),
+                                Container(
+                                  width: _cAction,
+                                  color: bg,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 8,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Tooltip(
+                                        message: 'Edit',
+                                        child: InkWell(
+                                          onTap: () => _showFormDialog(
+                                            docId: doc.id,
+                                            data: d,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(6),
+                                            decoration: BoxDecoration(
+                                              color: Colors.blue.shade50,
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                            ),
+                                            child: Icon(
+                                              Icons.edit_outlined,
+                                              color: Colors.blue.shade600,
+                                              size: 15,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Tooltip(
+                                        message: 'Delete',
+                                        child: InkWell(
+                                          onTap: () =>
+                                              _showDeleteDialog(doc.id, slNo),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(6),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red.shade50,
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                            ),
+                                            child: Icon(
+                                              Icons.delete_outline,
+                                              color: Colors.red.shade600,
+                                              size: 15,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
                   ),
                 );
               },
@@ -2195,6 +2322,7 @@ class _MasterLcContentState extends State<MasterLcContent> {
     _ttCtrl.dispose();
     _valueCtrl.dispose();
     _qtyCtrl.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 }

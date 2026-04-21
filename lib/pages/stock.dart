@@ -89,9 +89,7 @@ class _StockReportState extends State<StockReport> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Stock Report')), // উপরের বার
-      body: Padding(
+    return Padding(
         padding: const EdgeInsets.all(16.0), // প্যাডিং সবদিকে ১৬
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start, // বামে সারি
@@ -308,7 +306,6 @@ class _StockReportState extends State<StockReport> {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }

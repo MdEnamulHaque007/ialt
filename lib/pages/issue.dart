@@ -157,8 +157,9 @@ class _IssuePageState extends State<IssuePage>
       }
 
       // Criteria filter
-      if (_filterCriteria != 'All' && issue['criteria'] != _filterCriteria)
+      if (_filterCriteria != 'All' && issue['criteria'] != _filterCriteria) {
         return false;
+      }
 
       // Date range filter
       if (_dateRange != null) {
@@ -1025,17 +1026,9 @@ class _IssuePageState extends State<IssuePage>
     final endIndex = (startIndex + _rowsPerPage).clamp(0, totalItems);
     final paginated = filtered.sublist(startIndex, endIndex);
 
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showFormDialog(),
-        icon: const Icon(Icons.add),
-        label: const Text('New Issue'),
-        backgroundColor: Colors.indigo,
-        foregroundColor: Colors.white,
-        elevation: 2,
-      ),
-      body: Column(
+    return Container(
+      color: Colors.grey.shade50,
+      child: Column(
         children: [
           // Header Section
           Container(
@@ -1100,6 +1093,16 @@ class _IssuePageState extends State<IssuePage>
                       value:
                           '\$${NumberFormat('#,###').format(_totalIssuedValue)}',
                       color: Colors.purple,
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton.icon(
+                      onPressed: () => _showFormDialog(),
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('+ Add New'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.indigo,
+                        foregroundColor: Colors.white,
+                      ),
                     ),
                   ],
                 ),
