@@ -1026,12 +1026,9 @@ class _IssuePageState extends State<IssuePage>
     final endIndex = (startIndex + _rowsPerPage).clamp(0, totalItems);
     final paginated = filtered.sublist(startIndex, endIndex);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Container(
-          color: Colors.grey.shade50,
-          height: constraints.maxHeight,
-          child: Column(
+    return Container(
+      color: Colors.grey.shade50,
+      child: Column(
         children: [
           // Header Section
           Container(
@@ -1040,64 +1037,68 @@ class _IssuePageState extends State<IssuePage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.indigo.shade700,
-                            Colors.indigo.shade500,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.indigo.shade700,
+                                Colors.indigo.shade500,
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(
+                            Icons.inventory_2_outlined,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Issue Management',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'Track all issued items from production',
+                              style: TextStyle(color: Colors.grey),
+                            ),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.inventory_2_outlined,
-                        color: Colors.white,
-                        size: 28,
-                      ),
+                      ],
                     ),
-                    const SizedBox(width: 16),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Issue Management',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            'Track all issued items from production',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    ),
+                    const SizedBox(width: 4),
                     // Stats
                     _buildStatChip(
                       label: 'Total Issues',
                       value: '${filtered.length}',
                       color: Colors.blue,
                     ),
-                    const SizedBox(width: 12),
                     _buildStatChip(
                       label: 'Total Qty',
                       value: NumberFormat('#,###').format(_totalIssuedQty),
                       color: Colors.green,
                     ),
-                    const SizedBox(width: 12),
                     _buildStatChip(
                       label: 'Total Value',
                       value:
                           '\$${NumberFormat('#,###').format(_totalIssuedValue)}',
                       color: Colors.purple,
                     ),
-                    const SizedBox(width: 16),
                     ElevatedButton.icon(
                       onPressed: () => _showFormDialog(),
                       icon: const Icon(Icons.add, size: 16),
@@ -1242,7 +1243,7 @@ class _IssuePageState extends State<IssuePage>
           ),
 
           // Table Section
-          Expanded(
+          Flexible(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _issues.isEmpty
@@ -1267,7 +1268,7 @@ class _IssuePageState extends State<IssuePage>
                   )
                 : Column(
                     children: [
-                      Expanded(
+                      Flexible(
                         child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: SingleChildScrollView(
@@ -1485,8 +1486,6 @@ class _IssuePageState extends State<IssuePage>
         ],
       ),
     );
-  },
-);
   }
 
   Widget _buildStatChip({
