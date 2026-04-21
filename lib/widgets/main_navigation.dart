@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 import '../pages/stock.dart';
 import '../providers/auth_provider.dart';
 import 'logout_button.dart';
-import '../dashboard.dart';
+import '../pages/dashboard.dart';
 
 class ReportPage extends StatelessWidget {
   const ReportPage({super.key});
@@ -89,7 +89,7 @@ class _MainNavigationState extends State<MainNavigation> {
     const _NavItem(
       title: 'Dashboard',
       icon: Icons.dashboard,
-      page: DashboardPage(),
+      page: Dashboard(),
     ),
     const _NavItem(
       title: 'Master LC Information',
