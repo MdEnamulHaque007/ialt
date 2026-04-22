@@ -304,7 +304,12 @@ class _ProductionPageState extends State<ProductionPage>
   void _showFormDialog([Map<String, dynamic>? production]) {
     _resetForm();
     if (production != null) {
-      _selectedDate = (production['date'] as Timestamp?)?.toDate();
+      final rawDate = production['date'];
+      if (rawDate is Timestamp) {
+        _selectedDate = rawDate.toDate();
+      } else if (rawDate is String && rawDate.isNotEmpty) {
+        _selectedDate = DateTime.tryParse(rawDate);
+      }
       _selectedPoNo = production['poNo']?.toString();
       _selectedArticle = production['article']?.toString();
       _selectedColor = production['color']?.toString();
@@ -989,12 +994,12 @@ class _ProductionPageState extends State<ProductionPage>
                                       center: true,
                                     ),
                                     _buildDataCell(
-                                      '\$${NumberFormat('#,###').format(unitPrice)}',
+                                      '\$${NumberFormat('#.##').format(unitPrice)}',
                                       110,
                                       center: true,
                                     ),
                                     _buildDataCell(
-                                      '\$${NumberFormat('#,###').format(totalValue)}',
+                                      '\$${NumberFormat('#,###.##').format(totalValue)}',
                                       120,
                                       center: true,
                                     ),
