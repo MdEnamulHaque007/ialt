@@ -1,119 +1,261 @@
-IALT - ইনভেন্টরি ম্যানেজমেন্ট সিস্টেম
-IALT (Inventory & Logistics Tracking System) হলো footwear/manufacturing ব্যবসার জন্য তৈরি একটি Flutter-ভিত্তিক ম্যানেজমেন্ট অ্যাপ্লিকেশন।
-এটি মূলত Purchase Order, Production, Issue Tracking, Stock Management এবং Dashboard Analytics সহজভাবে পরিচালনার জন্য তৈরি করা হয়েছে।
-🌐 Live Demo: Vercel এ হোস্ট করা অ্যাপ
-https://ialt.vercel.app⁠�
-✨ প্রধান ফিচারসমূহ
+IALT - Inventory Management System
+
+A Flutter-based Inventory & Logistics Tracking System for footwear and manufacturing businesses.
+
+🌐 Live Demo: https://ialt.vercel.app
+
+---
+
+📌 Overview
+
+IALT (Inventory & Logistics Tracking System) is designed to manage and monitor the complete workflow of footwear/manufacturing operations including Purchase Orders, Production, Issue Tracking, Stock Management, Dashboard Analytics, and Activity Logs.
+
+This system helps improve operational efficiency, reduce manual errors, and provide real-time business insights.
+
+---
+
+✨ Features
+
 📦 Purchase Order Management
-Purchase Order তৈরি, আপডেট এবং ট্র্যাকিং
-Master LC Tag Integration
-PO ভিত্তিক Article ও Color Management
+
+- Create, update, and manage Purchase Orders
+- Master LC Tag integration
+- PO-based Article and Color tracking
+
 🏭 Production Tracking
-দৈনিক Production Entry
-Factory-wise Production Monitoring
-Pending vs Completed Production Tracking
+
+- Daily production entry and monitoring
+- Factory-wise production management
+- Pending vs completed production tracking
+
 ⚠️ Issue Tracking
-Production Issue Logging
-Issue Type অনুযায়ী Categorization
-Issue Status Monitoring
+
+- Production issue logging
+- Issue type categorization
+- Issue status monitoring
+
 📊 Stock Management
-Raw Material ও Finished Goods Tracking
-Stock In / Stock Out Monitoring
-Inventory Balance Calculation
+
+- Raw material and finished goods tracking
+- Stock In / Stock Out management
+- Inventory balance calculation
+
 📈 Dashboard & Analytics
-Summary Dashboard
-Real-time Data Insights
-Business Performance Analytics
+
+- Real-time summary dashboard
+- Business performance analytics
+- Production and inventory insights
+
 📝 Activity Logging
-User Activity Tracking
-Audit Trail Management
-System Change Monitoring
-🛠️ ব্যবহৃত প্রযুক্তি (Tech Stack)
+
+- User activity tracking
+- Audit trail management
+- System change monitoring
+
+---
+
+🛠 Tech Stack
+
 Frontend
-Flutter (Dart)
+
+- Flutter (Dart)
+
 Backend
-Firebase Firestore
-Firebase Authentication
+
+- Firebase Firestore
+- Firebase Authentication
+
 Deployment
-Vercel (Web Deployment)
-⚙️ Setup করার পূর্বশর্ত (Prerequisites)
-সিস্টেম চালানোর আগে নিচের জিনিসগুলো ইনস্টল থাকতে হবে:
-Flutter SDK
-Firebase Project
-Node.js (Vercel CLI ব্যবহারের জন্য)
-🚀 Installation Guide
-Step 1: Repository Clone করুন
-Bash
+
+- Vercel (Web Hosting)
+
+State Management
+
+- Provider
+
+---
+
+📂 Project Structure
+
+lib/
+├── models/
+├── providers/
+├── services/
+├── pages/
+├── widgets/
+├── utils/
+├── constants/
+└── main.dart
+
+---
+
+⚙️ Prerequisites
+
+Before running this project, make sure you have installed:
+
+- Flutter SDK
+- Dart SDK
+- Firebase Project Setup
+- Node.js (for Vercel deployment)
+- Git
+
+---
+
+🚀 Installation
+
+Step 1: Clone Repository
+
 git clone https://github.com/MdEnamulHaque007/ialt.git
 cd ialt
-Step 2: Dependencies Install করুন
-Bash
+
+---
+
+Step 2: Install Dependencies
+
 flutter pub get
-Step 3: Environment Setup করুন
-Bash
+
+---
+
+Step 3: Setup Environment Variables
+
+Copy the example environment file:
+
 cp .env.example .env
-এরপর .env ফাইলের ভিতরে আপনার Firebase Project-এর প্রয়োজনীয় Credentials যুক্ত করুন।
-⚠️ গুরুত্বপূর্ণ: .env ফাইল কখনো GitHub-এ Push করবেন না।
-Step 4: Application Run করুন
-Bash
+
+Then update the ".env" file with your Firebase credentials.
+
+Example:
+
+FIREBASE_API_KEY=
+FIREBASE_APP_ID=
+FIREBASE_MESSAGING_SENDER_ID=
+FIREBASE_PROJECT_ID=
+FIREBASE_AUTH_DOMAIN=
+FIREBASE_STORAGE_BUCKET=
+
+⚠️ Important:
+
+Never commit your ".env" file to GitHub.
+
+---
+
+Step 4: Run the Project
+
+For web:
+
 flutter run -d chrome
-এতে Web Browser-এ অ্যাপ রান হবে।
-🔐 Environment Variables
-প্রয়োজনীয় সকল Environment Variable-এর তালিকা .env.example ফাইলে দেওয়া আছে।
-উদাহরণ:
-Firebase API Key
-Project ID
-App ID
-Messaging Sender ID
-Auth Domain
-⚠️ নিরাপত্তার জন্য: .env ফাইল কখনো Repository-তে Commit করবেন না।
+
+For Android:
+
+flutter run
+
+---
+
+🔐 Firebase Setup
+
+Make sure your Firebase project includes:
+
+- Firestore Database
+- Firebase Authentication
+- Proper Firestore Security Rules
+
+Recommended minimum rule:
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+
+---
+
 🚀 Deployment
-Production Deployment করার জন্য:
-Bash
+
+Deploy to Vercel:
+
 vercel --prod
-এটি Vercel-এ সরাসরি Production Build Deploy করবে।
-📌 গুরুত্বপূর্ণ নিরাপত্তা নির্দেশনা
-Production-এ Deploy করার আগে অবশ্যই নিচের বিষয়গুলো নিশ্চিত করুন:
-✅ Firestore Security Rules যুক্ত করুন
-Database কখনো Test Mode-এ রাখবেন না।
-✅ .env কে Flutter Assets-এ যুক্ত করবেন না
-না হলে Credentials Public হয়ে যেতে পারে।
-✅ .gitignore ঠিকভাবে Configure করুন
-যাতে .env, temporary files এবং sensitive files GitHub-এ Upload না হয়।
-✅ Collection Names Standardize করুন
-সব জায়গায় একই Firestore Collection Name ব্যবহার করুন।
-📂 Project Structure (সংক্ষেপে)
-Plain text
-lib/
- ├── models/
- ├── providers/
- ├── services/
- ├── pages/
- ├── widgets/
- ├── utils/
- └── main.dart
-💡 Developer Notes
-এই Project-এ:
-Provider Pattern ব্যবহৃত হয়েছে
-Typed Firestore Models ব্যবহার করা হয়েছে
-Reusable Firestore Service Layer তৈরি করা হয়েছে
-Authentication Flow properly managed
-Activity Log Infrastructure প্রস্তুত আছে
-📣 গুরুত্বপূর্ণ পরামর্শ
-এই Project Production Scale-এ নেওয়ার আগে:
-Security Hardening
-Firestore Rules
-Duplicate File Cleanup
-Pagination Implementation
-Unit Testing Coverage
-অবশ্যই সম্পন্ন করা উচিত।
+
+Before deployment:
+
+- Remove ".env" from Flutter assets
+- Verify ".gitignore"
+- Deploy Firestore Rules
+- Rotate sensitive credentials if exposed
+
+---
+
+📋 Important Notes
+
+Security Recommendations
+
+DO:
+
+- Use Firestore Security Rules
+- Use AppConstants for collection names
+- Keep environment variables secure
+- Route Firestore access through service layer
+
+DON'T:
+
+- Commit ".env"
+- Hardcode Firebase credentials
+- Use direct Firestore collection strings in UI pages
+- Keep duplicate source files
+
+---
+
+🧪 Testing
+
+Current test coverage is minimal.
+
+Recommended improvements:
+
+- Unit tests for Models
+- Service layer tests
+- Provider state transition tests
+- Firestore mock testing
+
+Run tests:
+
+flutter test
+
+---
+
+📈 Future Improvements
+
+- Pagination for Firestore queries
+- Advanced reporting system
+- Export module enhancement
+- Better dashboard analytics
+- Role-based access control
+- Localization support
+- Mobile optimization
+
+---
+
 👨‍💻 Developer
+
 Developed by
+
 Md Enamul Haque
-বিশেষভাবে Footwear / Manufacturing Business-এর Inventory & Logistics Management-এর জন্য তৈরি।
+
+Focused on scalable ERP solutions for footwear and manufacturing businesses.
+
+---
+
 📄 License
+
 Private Business Application
-Internal Use Recommended
-⭐ Final Note
-IALT শুধুমাত্র একটি Inventory App নয়—
-এটি একটি scalable ERP foundation যা ভবিষ্যতে আরও বড় Production Management System-এ রূপ নিতে পারে।
+
+Internal Business Use Recommended
+
+---
+
+⭐ Final Thoughts
+
+IALT is not just an inventory app.
+
+It is a scalable ERP foundation designed for real-world manufacturing operations with future expansion potential across procurement, logistics, finance, and reporting systems.
