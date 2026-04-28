@@ -1,0 +1,6 @@
+{
+    "deepseek.provider": "deepseek",
+    "editor.defaultFormatter": "Dart-Code.dart-code",
+    "editor.defaultFoldingRangeProvider": "Dart-Code.dart-code",
+    "notebook.defaultFormatter": "Dart-Code.dart-code"
+}
