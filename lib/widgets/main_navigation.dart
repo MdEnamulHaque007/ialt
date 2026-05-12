@@ -4,6 +4,8 @@ import '../pages/issue.dart';
 import '../pages/master_lc_page.dart';
 import '../pages/purchase_order_page.dart';
 import '../pages/production_page.dart';
+import '../pages/cutting_page.dart';
+import '../pages/sewing_page.dart';
 import '../pages/setting_page.dart';
 import 'package:provider/provider.dart';
 import '../pages/stock.dart';
@@ -102,11 +104,14 @@ class _MainNavigationState extends State<MainNavigation> {
       icon: Icons.precision_manufacturing,
       page: ProductionPage(),
     ),
+    const _NavItem(title: 'Cutting', icon: Icons.cut, page: CuttingPage()),
+    const _NavItem(title: 'Sewing', icon: Icons.checkroom, page: SewingPage()),
     const _NavItem(
       title: 'Purchase Order',
       icon: Icons.description_outlined,
       page: PurchaseOrderPage(),
     ),
+
     const _NavItem(
       title: 'FG Issues',
       icon: Icons.inventory_2,
@@ -135,6 +140,41 @@ class _MainNavigationState extends State<MainNavigation> {
     return Scaffold(
       // Single AppBar — home.dart must NOT have its own Scaffold/AppBar
       appBar: AppBar(
+        leading: Builder(
+          builder: (BuildContext appBarContext) {
+            return _selectedIndex == 0
+                ? IconButton(
+                    icon: const Icon(Icons.menu),
+                    onPressed: () {
+                      Scaffold.of(appBarContext).openDrawer();
+                    },
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.menu),
+                        onPressed: () {
+                          Scaffold.of(appBarContext).openDrawer();
+                        },
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      const SizedBox(width: 2),
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back),
+                        onPressed: () {
+                          setState(() {
+                            _selectedIndex = 0;
+                          });
+                        },
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  );
+          },
+        ),
         title: Text(current.title),
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
@@ -243,6 +283,10 @@ class _MainNavigationState extends State<MainNavigation> {
                         onTap: () {
                           setState(() => _selectedIndex = index);
                           Navigator.pop(context);
+
+                          // Do NOT push a new MainNavigation here.
+                          // The drawer should just switch IndexedStack state.
+                          // (Pushing creates a new stack and causes wrong page/back behavior.)
                         },
                       ),
                     ],
