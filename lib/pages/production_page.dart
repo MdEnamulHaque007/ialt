@@ -104,7 +104,7 @@ class _ProductionPageState extends State<ProductionPage>
             prod['poNo']?.toString().toLowerCase().contains(searchLower) ??
             false;
         final articleMatch =
-            prod['article']?.toString().toLowerCase().contains(searchLower) ??
+            prod['articleNo']?.toString().toLowerCase().contains(searchLower) ??
             false;
         final colorMatch =
             prod['color']?.toString().toLowerCase().contains(searchLower) ??
@@ -130,7 +130,7 @@ class _ProductionPageState extends State<ProductionPage>
 
   double _getTotalOrderQuantity(Map<String, dynamic> production) {
     final poNo = production['poNo']?.toString() ?? '';
-    final article = production['article']?.toString() ?? '';
+    final article = production['articleNo']?.toString() ?? '';
     final color = production['color']?.toString() ?? '';
 
     for (final po in _purchaseOrders) {
@@ -151,7 +151,7 @@ class _ProductionPageState extends State<ProductionPage>
 
   double _getUnitPrice(Map<String, dynamic> production) {
     final poNo = production['poNo']?.toString() ?? '';
-    final article = production['article']?.toString() ?? '';
+    final article = production['articleNo']?.toString() ?? '';
     final color = production['color']?.toString() ?? '';
 
     for (final po in _purchaseOrders) {
@@ -311,7 +311,7 @@ class _ProductionPageState extends State<ProductionPage>
         _selectedDate = DateTime.tryParse(rawDate);
       }
       _selectedPoNo = production['poNo']?.toString();
-      _selectedArticle = production['article']?.toString();
+      _selectedArticle = production['articleNo']?.toString();
       _selectedColor = production['color']?.toString();
       _qtyController.text = production['qty']?.toString() ?? '';
       _editingId = production['id'];
@@ -541,12 +541,9 @@ class _ProductionPageState extends State<ProductionPage>
             style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
           ),
           value: _selectedPoNo,
-          items: [
-            const DropdownMenuItem(value: null, child: Text('Select PO No *')),
-            ..._getPoNumbers().map(
-              (po) => DropdownMenuItem(value: po, child: Text(po)),
-            ),
-          ],
+          items: _getPoNumbers().map(
+            (po) => DropdownMenuItem(value: po, child: Text(po)),
+          ).toList(),
           onChanged: (value) {
             setDialogState(() {
               _selectedPoNo = value;
@@ -578,17 +575,12 @@ class _ProductionPageState extends State<ProductionPage>
             style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
           ),
           value: _selectedArticle,
-          items: [
-            const DropdownMenuItem(
-              value: null,
-              child: Text('Select Article *'),
-            ),
-            if (_selectedPoNo != null)
-              ..._getArticlesForPo(_selectedPoNo!).map(
-                (article) =>
-                    DropdownMenuItem(value: article, child: Text(article)),
-              ),
-          ],
+          items: _selectedPoNo != null
+              ? _getArticlesForPo(_selectedPoNo!).map(
+                  (article) =>
+                      DropdownMenuItem(value: article, child: Text(article)),
+                ).toList()
+              : [],
           onChanged: _selectedPoNo != null
               ? (value) {
                   setDialogState(() {
@@ -618,33 +610,35 @@ class _ProductionPageState extends State<ProductionPage>
             'Select Color *',
             style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
           ),
-          value: _selectedColor,
-          items: [
-            const DropdownMenuItem(value: null, child: Text('Select Color *')),
-            if (_selectedPoNo != null && _selectedArticle != null)
-              ..._getColorsForPoAndArticle(
-                _selectedPoNo!,
-                _selectedArticle!,
-              ).map(
-                (color) => DropdownMenuItem(
-                  value: color,
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 14,
-                        height: 14,
-                        decoration: BoxDecoration(
-                          color: _getColorFromName(color),
-                          shape: BoxShape.circle,
-                        ),
+          value: () {
+            if (_selectedPoNo == null || _selectedArticle == null) return null;
+            final available = _getColorsForPoAndArticle(_selectedPoNo!, _selectedArticle!);
+            if (_selectedColor != null && available.contains(_selectedColor)) return _selectedColor;
+            return null;
+          }(),
+          items: (_selectedPoNo != null && _selectedArticle != null)
+              ? _getColorsForPoAndArticle(_selectedPoNo!, _selectedArticle!)
+                  .map(
+                    (color) => DropdownMenuItem(
+                      value: color,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 14,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: _getColorFromName(color),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(color),
+                        ],
                       ),
-                      const SizedBox(width: 6),
-                      Text(color),
-                    ],
-                  ),
-                ),
-              ),
-          ],
+                    ),
+                  )
+                  .toList()
+              : [],
           onChanged: (_selectedPoNo != null && _selectedArticle != null)
               ? (value) => setDialogState(() => _selectedColor = value)
               : null,
@@ -983,7 +977,7 @@ class _ProductionPageState extends State<ProductionPage>
                                       center: true,
                                     ),
                                     _buildDataCell(
-                                      prod['article'] ?? '—',
+                                      prod['articleNo'] ?? '—',
                                       150,
                                       center: true,
                                     ),

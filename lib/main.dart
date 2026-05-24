@@ -3,7 +3,6 @@
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 
 import 'app.dart' show AuthWrapper;
@@ -12,33 +11,30 @@ import 'providers/auth_provider.dart';
 import 'providers/data_provider.dart';
 import 'providers/settings_provider.dart';
 
+Future<void> _tryInitFirebase() async {
+  final firebaseOptions = FirebaseService.options;
+
+  // Production-safe: do not block UI even if Firebase config is missing.
+  // If options are null/invalid, Firebase features may not work, but app must load.
+  if (firebaseOptions == null) return;
+
+  await Firebase.initializeApp(options: firebaseOptions);
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    await dotenv.load(fileName: ".env");
+    await _tryInitFirebase();
   } catch (e) {
-    debugPrint('Warning: .env file not found. $e');
-  }
-
-  final firebaseOptions = FirebaseService.options;
-  if (firebaseOptions == null) {
-    runApp(const ConfigErrorApp());
-    return;
-  }
-
-  try {
-    await Firebase.initializeApp(options: firebaseOptions);
-  } catch (e) {
-    debugPrint('Firebase initialization error: $e');
-    runApp(ConfigErrorApp(message: 'Firebase initialization failed.\n\n$e'));
-    return;
+    debugPrint('Firebase initialization error (non-fatal): $e');
   }
 
   runApp(const MyApp());
 }
 
-/// Shown when Firebase config is missing or invalid
+/// Kept for reference.
+/// If you want a hard failure screen, replace `runApp(const MyApp())` above with `ConfigErrorApp`.
 class ConfigErrorApp extends StatelessWidget {
   final String? message;
   const ConfigErrorApp({super.key, this.message});
@@ -63,14 +59,14 @@ class ConfigErrorApp extends StatelessWidget {
                 Text(
                   message ??
                       'Missing Firebase configuration.\n\n'
-                          'Please create a .env file in the project root with:\n\n'
-                          'FIREBASE_API_KEY=your_api_key\n'
-                          'FIREBASE_AUTH_DOMAIN=your_auth_domain\n'
-                          'FIREBASE_PROJECT_ID=your_project_id\n'
-                          'FIREBASE_STORAGE_BUCKET=your_storage_bucket\n'
-                          'FIREBASE_MESSAGING_SENDER_ID=your_sender_id\n'
-                          'FIREBASE_APP_ID=your_app_id\n\n'
-                          'Then restart the app.',
+                          'Set these as Vercel Build-time dart-define values:\n'
+                          '- FIREBASE_API_KEY\n'
+                          '- FIREBASE_AUTH_DOMAIN\n'
+                          '- FIREBASE_PROJECT_ID\n'
+                          '- FIREBASE_STORAGE_BUCKET\n'
+                          '- FIREBASE_MESSAGING_SENDER_ID\n'
+                          '- FIREBASE_APP_ID\n\n'
+                          'Then rebuild/redeploy.',
                   textAlign: TextAlign.center,
                 ),
               ],

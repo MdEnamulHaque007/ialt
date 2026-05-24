@@ -1,6 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/foundation.dart';
 
 class FirebaseService {
@@ -9,40 +8,53 @@ class FirebaseService {
   FirebaseService._();
 
   static FirebaseOptions? _options;
+
+  // For Flutter Web (Vercel): provide these via build-time defines.
+  // Example:
+  // --dart-define=FIREBASE_API_KEY=...
+  // --dart-define=FIREBASE_AUTH_DOMAIN=...
+  // --dart-define=FIREBASE_PROJECT_ID=...
+  // --dart-define=FIREBASE_STORAGE_BUCKET=...
+  // --dart-define=FIREBASE_MESSAGING_SENDER_ID=...
+  // --dart-define=FIREBASE_APP_ID=...
   static FirebaseOptions? get options {
-    if (_options == null) {
-      try {
-        final apiKey = dotenv.env['FIREBASE_API_KEY'];
-        final authDomain = dotenv.env['FIREBASE_AUTH_DOMAIN'];
-        final projectId = dotenv.env['FIREBASE_PROJECT_ID'];
-        final storageBucket = dotenv.env['FIREBASE_STORAGE_BUCKET'];
-        final messagingSenderId = dotenv.env['FIREBASE_MESSAGING_SENDER_ID'];
-        final appId = dotenv.env['FIREBASE_APP_ID'];
+    if (_options != null) return _options;
 
-        if (apiKey == null ||
-            apiKey.isEmpty ||
-            projectId == null ||
-            projectId.isEmpty) {
-          debugPrint(
-            'FirebaseService: Missing or empty FIREBASE_API_KEY / FIREBASE_PROJECT_ID in .env',
-          );
-          return null;
-        }
+    try {
+      // Support BOTH compile-time dart-define (Flutter Web) and
+      // runtime JS env injection (Vercel/HTML) as a fallback.
+      const apiKey = String.fromEnvironment('FIREBASE_API_KEY');
+      const authDomain = String.fromEnvironment('FIREBASE_AUTH_DOMAIN');
+      const projectId = String.fromEnvironment('FIREBASE_PROJECT_ID');
+      const storageBucket = String.fromEnvironment('FIREBASE_STORAGE_BUCKET');
+      const messagingSenderId = String.fromEnvironment(
+        'FIREBASE_MESSAGING_SENDER_ID',
+      );
+      const appId = String.fromEnvironment('FIREBASE_APP_ID');
 
-        _options = FirebaseOptions(
-          apiKey: apiKey,
-          authDomain: authDomain ?? '',
-          projectId: projectId,
-          storageBucket: storageBucket ?? '',
-          messagingSenderId: messagingSenderId ?? '',
-          appId: appId ?? '',
+      // Production-safe: only return options when required values exist.
+      // If missing, `main.dart` will still render UI (non-fatal).
+      if (apiKey.isEmpty || projectId.isEmpty) {
+        debugPrint(
+          'FirebaseService: Missing FIREBASE_API_KEY or FIREBASE_PROJECT_ID. '
+          'App will start, but Firebase features will be unavailable.',
         );
-      } catch (e) {
-        debugPrint('FirebaseService: Error loading options from .env: $e');
         return null;
       }
+
+      _options = FirebaseOptions(
+        apiKey: apiKey,
+        authDomain: authDomain,
+        projectId: projectId,
+        storageBucket: storageBucket,
+        messagingSenderId: messagingSenderId,
+        appId: appId,
+      );
+      return _options;
+    } catch (e) {
+      debugPrint('FirebaseService: Error building FirebaseOptions: $e');
+      return null;
     }
-    return _options;
   }
 
   static Future<void> logActivity(
